@@ -1,0 +1,497 @@
+<head>
+  <style>
+    .flex-container {
+      display: flex;
+    }
+    
+    body {
+      padding: 2em; 
+      margin: 0;
+    }
+
+    .flex-left {
+      width: 50%;
+      height: 25vh;
+      padding: 5px;
+    }
+
+    .flex-right {
+        width: 50%;
+        padding: 5px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="flex-container">
+    <div style="width:33%; border:1px solid black; border-radius: 5px; padding:5px; margin:5px;">
+      <div>
+        Level: 
+        <select id="LEVEL_SELECT" onchange="setCharacterLevel(); refresh();">
+          <option value=1>1</option>
+          <option value=2>2</option>
+          <option value=3>3</option>
+          <option value=4>4</option>
+          <option value=5>5</option>
+          <option value=6>6</option>
+          <option value=7>7</option>
+          <option value=8>8</option>
+          <option value=9>9</option>
+          <option value=10>10</option>
+          <option value=11>11</option>
+          <option value=12>12</option>
+          <option value=13>13</option>
+          <option value=14>14</option>
+          <option value=15>15</option>
+          <option value=16>16</option>
+          <option value=17>17</option>
+          <option value=18>18</option>
+          <option value=19>19</option>
+          <option value=20>20</option>
+          <option value=21>21</option>
+          <option value=22>22</option>
+        </select>
+      </div>
+      <div>Available Features: <span id="COUNT_AVAILABLE_FEATURES"></span></div>
+      <div>
+        <table>
+          <tr><td>STR:</td><td><select id="STR_SELECT" onchange="setCharacterStat('STR',this.value); refresh();"></select><td><td>FINAL:</td><td><span id="FINAL_STR"></span></td><td>MOD:</td><td><span id="MOD_STR"></span></td></tr>
+          <tr><td>DEX:</td><td><select id="DEX_SELECT" onchange="setCharacterStat('DEX',this.value); refresh();"></select><td><td>FINAL:</td><td><span id="FINAL_DEX"></span></td><td>MOD:</td><td><span id="MOD_DEX"></span></td></tr>
+          <tr><td>CON:</td><td><select id="CON_SELECT" onchange="setCharacterStat('CON',this.value); refresh();"></select><td><td>FINAL:</td><td><span id="FINAL_CON"></span></td><td>MOD:</td><td><span id="MOD_CON"></span></td></tr>
+          <tr><td>INT:</td><td><select id="INT_SELECT" onchange="setCharacterStat('INT',this.value); refresh();"></select><td><td>FINAL:</td><td><span id="FINAL_INT"></span></td><td>MOD:</td><td><span id="MOD_INT"></span></td></tr>
+          <tr><td>WIS:</td><td><select id="WIS_SELECT" onchange="setCharacterStat('WIS',this.value); refresh();"></select><td><td>FINAL:</td><td><span id="FINAL_WIS"></span></td><td>MOD:</td><td><span id="MOD_WIS"></span></td></tr>
+          <tr><td>CHA:</td><td><select id="CHA_SELECT" onchange="setCharacterStat('CHA',this.value); refresh();"></select><td><td>FINAL:</td><td><span id="FINAL_CHA"></span></td><td>MOD:</td><td><span id="MOD_CHA"></span></td></tr>
+        </table>
+      </div>
+      <div>Armor Class: <span id="FINAL_ARMOR_CLASS"></span></div>
+      <div>Hit Points: <span id="FINAL_HIT_POINTS"></span></div>
+      <div>Proficiency Bonus: <span id="FINAL_PROFICIENCY_BONUS"></span></div>
+      <div>Feature Points: <span id="FINAL_FEATURE_POINTS"></span></div>
+    </div>
+    <div style="width:33%; border:1px solid black; border-radius: 5px; padding:5px; margin:5px;">
+      <div><h3>Proficiencies</h3></div>
+      <div id="PROFICIENCIES"></div>
+    </div>
+    <div style="width:33%; border:1px solid black; border-radius: 5px; padding:5px; margin:5px;">
+      <div><h3>Additional Features</h3></div>
+      <div id="ADDITIONAL_FEATURES"></div>
+    </div>
+  </div>
+        
+
+  <div class="flex-container">
+    <div class="flex-left">
+      <div><h3>Features Selected</h3></div>
+      <div id="SELECTED_FEATURES"></div>
+    </div>
+    <div class="flex-right">
+      <div><h3>Choose from these features.</h3></div>
+      <div>
+        Filter by Tag: <select id="FILTER_TAG" onchange="refresh()"><option value="">All</option></select> 
+        <input type="checkbox" id="FILTER_AVAILABLE" checked></input>Available Only
+      </div>
+      <div>Search: <input type="test" id="SEARCH_FEATURE" onchange="refresh()"></input></div>
+      <div id="AVAILABLE_FEATURES"></div>
+    </div>
+  </div>
+    
+</body>
+
+
+<script>
+  /* To implement: 
+    Backgrounds? 
+    Mutually exclusive features
+    The entire feature list
+    Spells as features
+    Full proficiency list
+    Equipment (applied after the features)
+    Hover popups on every possible calculation to explain where the total came from.
+  */
+
+  var PROFICIENCIES = [
+    { NAME: "ARCANA", STAT: "INT" },
+    { NAME: "INVESTIGATION", STAT: "INT" }
+  ];
+
+  function makeBaseProficiencies() {
+    var r = [];
+    for (var prof of PROFICIENCIES)
+      r.push({NAME: prof.NAME, STAT: prof.STAT, PROF: false, EXPERTISE: false, BONUS: 0 });
+    return r;
+  }
+
+  var CHARACTER_BASE = {
+    LEVEL: 1,
+    FEATURES_AVAILABLE: function() { return 5 + (CHARACTER_BASE.LEVEL * 2); },
+    CHOSEN_FEATURES: [],
+    BASE_STATS: { STR: 10, DEX: 10, CON: 10, INT: 10, WIS: 10, CHA: 10 },
+    STATS: { STR: 10, DEX: 10, CON: 10, INT: 10, WIS: 10, CHA: 10 },
+    MODIFIERS: { STR: 0, DEX: 0, CON: 0, INT: 0, WIS: 0, CHA: 0 },
+    HIT_POINTS: 10,
+    PROFICIENCY_BONUS: 2,
+    FEATURE_POINTS: 2,
+    ARMOR_CLASS: 10,
+    PROFICIENCIES: makeBaseProficiencies(),
+    ADDITIONAL_FEATURES: []
+  };
+
+  function findProf(c, name) {
+    for (var prof of c.PROFICIENCIES)
+      if (prof.NAME == name)
+        return prof;
+    return undefined;
+  }
+
+  function resetCharacterStats() {
+    CHARACTER_BASE.STATS = { STR: CHARACTER_BASE.BASE_STATS.STR,
+                             DEX: CHARACTER_BASE.BASE_STATS.DEX, 
+                             CON: CHARACTER_BASE.BASE_STATS.CON, 
+                             INT: CHARACTER_BASE.BASE_STATS.INT, 
+                             WIS: CHARACTER_BASE.BASE_STATS.WIS, 
+                             CHA: CHARACTER_BASE.BASE_STATS.CHA };
+    CHARACTER_BASE.HIT_POINTS = (10 + CHARACTER_BASE.MODIFIERS.CON) * CHARACTER_BASE.LEVEL;
+    CHARACTER_BASE.ARMOR_CLASS = 10 + CHARACTER_BASE.MODIFIERS.DEX;
+    CHARACTER_BASE.PROFICIENCY_BONUS = 2;
+    CHARACTER_BASE.FEATURE_POINTS = 2;
+    CHARACTER_BASE.PROFICIENCIES = makeBaseProficiencies();
+    CHARACTER_BASE.ADDITIONAL_FEATURES = [];
+  }
+
+  function purgeFeatures() {
+    while (true) {
+      applyFeatures();
+      var pre_size = CHARACTER_BASE.CHOSEN_FEATURES.length;
+      CHARACTER_BASE.CHOSEN_FEATURES = CHARACTER_BASE.CHOSEN_FEATURES.filter(a => isFeatureAvailable(a));
+      var post_size = CHARACTER_BASE.CHOSEN_FEATURES.length;
+      if (pre_size == post_size)
+        break;
+    }
+  }
+
+  function setCharacterLevel() {
+    CHARACTER_BASE.LEVEL = document.getElementById("LEVEL_SELECT").value;
+  }
+
+  function setCharacterStat(stat, value) {
+    CHARACTER_BASE.BASE_STATS[stat] = value;
+  }
+
+  function calculateModifier(stat) {
+    if (stat >= 0 && stat < 2) return -5;
+    if (stat >= 2 && stat < 4) return -4;
+    if (stat >= 4 && stat < 6) return -3;
+    if (stat >= 6 && stat < 8) return -2;
+    if (stat >= 8 && stat < 10) return -1;
+    if (stat >= 10 && stat < 12) return 0;
+    if (stat >= 12 && stat < 14) return 1;
+    if (stat >= 14 && stat < 16) return 2;
+    if (stat >= 16 && stat < 18) return 3;
+    if (stat >= 18 && stat < 20) return 4;
+    if (stat >= 20 && stat < 22) return 5;
+    if (stat >= 22 && stat < 24) return 6;
+  }
+
+  function applyFeatures() {
+    resetCharacterStats();
+    sortCharacterFeatures();
+    for (var feature of CHARACTER_BASE.CHOSEN_FEATURES)
+      if (feature.APPLY_STATS)
+        feature.APPLY_STATS(feature, CHARACTER_BASE);
+    CHARACTER_BASE.MODIFIERS = {
+      STR: calculateModifier(CHARACTER_BASE.STATS.STR),
+      DEX: calculateModifier(CHARACTER_BASE.STATS.DEX),
+      CON: calculateModifier(CHARACTER_BASE.STATS.CON),
+      INT: calculateModifier(CHARACTER_BASE.STATS.INT),
+      WIS: calculateModifier(CHARACTER_BASE.STATS.WIS),
+      CHA: calculateModifier(CHARACTER_BASE.STATS.CHA)      
+    };
+    CHARACTER_BASE.HIT_POINTS = (10 + CHARACTER_BASE.MODIFIERS.CON) * CHARACTER_BASE.LEVEL;
+    CHARACTER_BASE.ARMOR_CLASS = 10 + CHARACTER_BASE.MODIFIERS.DEX;
+    CHARACTER_BASE.PROFICIENCY_BONUS = 2;
+    CHARACTER_BASE.FEATURE_POINTS = 2;    
+    CHARACTER_BASE.PROFICIENCIES = makeBaseProficiencies();
+    CHARACTER_BASE.ADDITIONAL_FEATURES = [];
+    for (var feature of CHARACTER_BASE.CHOSEN_FEATURES)
+      if (feature.APPLY_FEATURE)
+        feature.APPLY_FEATURE(feature, CHARACTER_BASE);
+    for (var prof of CHARACTER_BASE.PROFICIENCIES) {
+      prof.BONUS = CHARACTER_BASE.MODIFIERS[prof.STAT];
+      if (prof.PROF) prof.BONUS += CHARACTER_BASE.PROFICIENCY_BONUS;
+      if (prof.EXPERTISE) prof.BONUS += CHARACTER_BASE.PROFICIENCY_BONUS;
+    }
+  }
+
+  function buildCharacter() {
+    // Get rid of any features that are not allowed.
+    purgeFeatures();
+    if (CHARACTER_BASE.CHOSEN_FEATURES.length > CHARACTER_BASE.FEATURES_AVAILABLE())
+      CHARACTER_BASE.CHOSEN_FEATURES.length = CHARACTER_BASE.FEATURES_AVAILABLE();
+    purgeFeatures();
+  }
+
+  var FEATURES = [
+    { 
+      NAME: "Unarmored Defense (CON)", 
+      DESCRIPTION: "When not wearing armor, add your CON modifier to AC",
+      SEQUENCE: 0,
+      REQUIREMENTS: "CON > 14, Can't have Unarmored Defense (WIS)",
+      AVAILABLE: (f, c) => c.STATS.CON > 14 && !hasFeature("Unarmored Defense (WIS)"),
+      APPLY_STATS: (f, c) => {},
+      APPLY_FEATURE: (f, c) => { c.ARMOR_CLASS += c.MODIFIERS.CON; },
+      TAGS: [ "COMMON", "ARMOR CLASS", "BARBARIAN" ]
+    },
+    { 
+      NAME: "Unarmored Defense (WIS)", 
+      DESCRIPTION: "When not wearing armor, add your WIS modifier to AC",
+      SEQUENCE: 0,
+      REQUIREMENTS: "WIS > 14, Can't have Unarmored Defense (CON)",
+      AVAILABLE: (f, c) => c.STATS.WIS > 14 && !hasFeature("Unarmored Defense (CON)"),
+      APPLY_STATS: (f, c) => {},
+      APPLY_FEATURE: (f, c) => { c.ARMOR_CLASS += c.MODIFIERS.WIS; },
+      TAGS: [ "COMMON", "ARMOR CLASS", "MONK" ]
+    },
+    { 
+      NAME: "Toughness", 
+      DESCRIPTION: "Your HP increases by CON modifer points per level.",
+      SEQUENCE: 0,
+      REQUIREMENTS: "",
+      AVAILABLE: true,
+      APPLY_STATS: (f, c) => {},
+      APPLY_FEATURE: (f, c) => { c.HIT_POINTS += (c.MODIFIERS.CON * c.LEVEL); },
+      TAGS: [ "COMMON", "HIT POINTS" ]
+    },
+    { 
+      NAME: "EXTRA ATTACK", 
+      DESCRIPTION: "When you take the attack action, you can make an additional attack.",
+      SEQUENCE: 1,
+      REQUIREMENTS: "LEVEL 5",
+      AVAILABLE: (f, c) => c.LEVEL >= 5,
+      APPLY_STATS: (f, c) => {},
+      APPLY_FEATURE: (f, c) => { c.ADDITIONAL_FEATURES.push(f); },
+      TAGS: [ "FIGHTER" ]
+    },
+    { 
+      NAME: "ARCANIST", 
+      DESCRIPTION: "Gain proficiency in the arcana skill.",
+      SEQUENCE: 1,
+      REQUIREMENTS: "",
+      AVAILABLE: (f, c) => true,
+      APPLY_STATS: (f, c) => {},
+      APPLY_FEATURE: (f, c) => { findProf(c, 'ARCANA').PROF = true; },
+      TAGS: [ "PROFICIENCY", "INTELLIGENCE" ]
+    },
+    { 
+      NAME: "TALENTED", 
+      DESCRIPTION: "Your proficiency bonus increases by 1.",
+      SEQUENCE: 1,
+      REQUIREMENTS: "LEVEL 4",
+      AVAILABLE: (f, c) => c.LEVEL >= 4,
+      APPLY_STATS: (f, c) => {},
+      APPLY_FEATURE: (f, c) => { c.PROFICIENCY_BONUS += 1; },
+      TAGS: [ "PROFICIENCY", "COMMON" ]
+    },
+    { 
+      NAME: "SAVANT", 
+      DESCRIPTION: "Your proficiency bonus increases by 1.",
+      SEQUENCE: 1,
+      REQUIREMENTS: "LEVEL 8, TALENTED",
+      AVAILABLE: (f, c) => c.LEVEL >= 8 && hasFeature('TALENTED'),
+      APPLY_STATS: (f, c) => {},
+      APPLY_FEATURE: (f, c) => { c.PROFICIENCY_BONUS += 1; },
+      TAGS: [ "PROFICIENCY", "COMMON" ]
+    },
+    { 
+      NAME: "SPELLCASTING: ABJURATION", 
+      DESCRIPTION: "You are able to learn and cast spells of the school of abjuration.",
+      SEQUENCE: 1,
+      REQUIREMENTS: "INT > 14",
+      AVAILABLE: (f, c) => c.STATS.INT > 14,
+      APPLY_STATS: (f, c) => {},
+      APPLY_FEATURE: (f, c) => { c.ADDITIONAL_FEATURES.push(f); },
+      TAGS: [ "SPELLCASTING", "ABJURATION" ]
+    },
+    { 
+      NAME: "SHIELD (SPELL)", 
+      DESCRIPTION: "SHIELD SPELL",
+      SEQUENCE: 1,
+      REQUIREMENTS: "SPELLCASTING: ABJURATION",
+      AVAILABLE: (f, c) => hasFeature("SPELLCASTING: ABJURATION"),
+      APPLY_STATS: (f, c) => {},
+      APPLY_FEATURE: (f, c) => { c.ADDITIONAL_FEATURES.push(f); },
+      TAGS: [ "SPELLCASTING", "ABJURATION", "SPELL" ]
+    }
+  ];
+
+  function cloneFeature(feature) {
+    return {
+      NAME: feature.NAME,
+      DESCRIPTION: feature.DESCRIPTION,
+      SEQUENCE: feature.SEQUENCE,
+      REQUIREMENTS: feature.REQUIREMENTS,
+      AVAILABLE: feature.AVAILABLE,
+      APPLY_STASTS: feature.APPLY_STATS,
+      APPLY_FEATURE: feature.APPLY_FEATURE
+    };
+  }
+
+  var CHOSEN_FEATURES = [];
+
+  function clearElement(element) {
+    element.innerHTML = "";
+  }
+
+  function checkPredicate(character, feature, predicate) {
+    if (predicate instanceof Function) return predicate(feature, character);
+    return predicate;
+  }
+
+  // Change to pre-regs met.
+  function isFeatureAvailable(feature) {
+    return checkPredicate(CHARACTER_BASE, feature, feature.AVAILABLE);
+  }
+
+  function addFeature(feature) {
+    CHARACTER_BASE.CHOSEN_FEATURES.push(feature);
+    refresh();
+  }
+
+  function removeFeature(feature) {
+    CHARACTER_BASE.CHOSEN_FEATURES = CHARACTER_BASE.CHOSEN_FEATURES.filter(a => a !== feature);
+    refresh();
+  }
+
+  function sortCharacterFeatures() {
+    CHARACTER_BASE.CHOSEN_FEATURES.sort((a,b) => a.SEQUENCE - b.SEQUENCE);
+  }
+
+  function hasFeature(featureName) {
+    for (var feature of CHARACTER_BASE.CHOSEN_FEATURES)
+      if (feature.NAME == featureName)
+        return true;
+    return false;
+  }
+
+  function buildAvailableFeatureList(filterTag, search) {
+    var output = document.getElementById("AVAILABLE_FEATURES");
+    clearElement(output);
+    for (var feature of FEATURES) {
+      if (search != "" && !feature.NAME.toUpperCase().includes(search.toUpperCase())) continue;
+      if (filterTag != "" && !feature.TAGS.includes(filterTag)) continue;
+      var tile = buildFeatureTile(feature, feature => addFeature(cloneFeature(feature)));
+      var available = true;
+      if (available) available &= CHARACTER_BASE.CHOSEN_FEATURES.length < CHARACTER_BASE.FEATURES_AVAILABLE();
+      if (available) available &= isFeatureAvailable(feature);
+      if (available && !feature.TAGS.includes("STACKABLE")) available &= !hasFeature(feature.NAME);
+      if (document.getElementById("FILTER_AVAILABLE").checked && !available) continue;
+      if (available)
+        output.appendChild(tile);
+      else {
+        tile.disabled = true;
+        tile.onclick = null;
+        tile.style.border = "1px solid gray";
+        output.appendChild(tile);
+      }
+    }
+  }
+
+  function buildSelectedFeatureList() {
+    var output = document.getElementById("SELECTED_FEATURES");
+    clearElement(output);
+    for (var feature of CHARACTER_BASE.CHOSEN_FEATURES) {
+      output.appendChild(buildFeatureTile(feature, (feature) => {
+        removeFeature(feature);
+      }));
+    }
+  }
+
+  function buildAdditionalFeatureList() {
+    var output = document.getElementById("ADDITIONAL_FEATURES");
+    clearElement(output);
+    for (var feature of CHARACTER_BASE.ADDITIONAL_FEATURES) {
+      output.appendChild(buildFeatureTile(feature, (feature) => { }));
+    }
+  }
+
+  function buildFeatureTile(feature, callback) {
+    var result = document.createElement('div');
+    result.style.border = '3px solid green';
+    result.style.borderRadius = '5px';
+    result.style.margin = '5px';
+
+    result.innerHTML = `<table><tr><td>${feature.NAME}</td><td>${feature.REQUIREMENTS}</td></tr><tr><td colspan=2>${feature.DESCRIPTION}</td></tr></table>`;
+
+    result.onclick = () => callback(feature);
+
+    return result;
+  }
+
+  function refresh() {
+    buildCharacter();
+
+    document.getElementById("COUNT_AVAILABLE_FEATURES").innerText = CHARACTER_BASE.FEATURES_AVAILABLE();
+    document.getElementById("FINAL_ARMOR_CLASS").innerText = CHARACTER_BASE.ARMOR_CLASS;
+    document.getElementById("FINAL_HIT_POINTS").innerText = CHARACTER_BASE.HIT_POINTS;
+    document.getElementById("FINAL_PROFICIENCY_BONUS").innerText = CHARACTER_BASE.PROFICIENCY_BONUS;
+    document.getElementById("FINAL_FEATURE_POINTS").innerText = CHARACTER_BASE.FEATURE_POINTS;
+    document.getElementById("FINAL_STR").innerText = CHARACTER_BASE.STATS.STR;
+    document.getElementById("FINAL_DEX").innerText = CHARACTER_BASE.STATS.DEX;
+    document.getElementById("FINAL_CON").innerText = CHARACTER_BASE.STATS.CON;
+    document.getElementById("FINAL_INT").innerText = CHARACTER_BASE.STATS.INT;
+    document.getElementById("FINAL_WIS").innerText = CHARACTER_BASE.STATS.WIS;
+    document.getElementById("FINAL_CHA").innerText = CHARACTER_BASE.STATS.CHA;
+
+    document.getElementById("MOD_STR").innerText = CHARACTER_BASE.MODIFIERS.STR;
+    document.getElementById("MOD_DEX").innerText = CHARACTER_BASE.MODIFIERS.DEX;
+    document.getElementById("MOD_CON").innerText = CHARACTER_BASE.MODIFIERS.CON;
+    document.getElementById("MOD_INT").innerText = CHARACTER_BASE.MODIFIERS.INT;
+    document.getElementById("MOD_WIS").innerText = CHARACTER_BASE.MODIFIERS.WIS;
+    document.getElementById("MOD_CHA").innerText = CHARACTER_BASE.MODIFIERS.CHA;
+    
+    buildAvailableFeatureList(document.getElementById("FILTER_TAG").value, document.getElementById("SEARCH_FEATURE").value);
+    buildSelectedFeatureList();
+    buildAdditionalFeatureList();
+
+    var prof_list = document.getElementById("PROFICIENCIES");
+    prof_list.innerHTML = "";
+    for (var prof of CHARACTER_BASE.PROFICIENCIES)
+      prof_list.innerHTML += `<div>${prof.NAME} (${prof.STAT}) - ${prof.BONUS}</div>`; 
+  }
+
+  function makeOption(value) {
+    var r = document.createElement('option');
+    r.value = value;
+    r.innerText = value;
+    return r;
+  }
+
+  var TAGS = [];
+  for (var feature of FEATURES) {
+    for (var tag of feature.TAGS)
+      TAGS.push(tag);
+  }
+
+  var UNIQUE_TAGS = TAGS.filter((value, index, array) => array.indexOf(value) === index);
+  UNIQUE_TAGS.sort();
+
+  for (var tag of UNIQUE_TAGS) {
+    document.getElementById("FILTER_TAG").innerHTML += `<option value="${tag}">${tag}</option>`;
+  }
+
+  function makeStatSelector(stat) {
+    var select = document.getElementById(stat + "_SELECT");
+    for (var x = 1; x <= 20; ++x)
+      select.appendChild(makeOption(x));
+    select.value = 10;
+  }
+
+
+  makeStatSelector('STR');
+  makeStatSelector('DEX');
+  makeStatSelector('CON');
+  makeStatSelector('INT');
+  makeStatSelector('WIS');
+  makeStatSelector('CHA');
+  refresh();
+
+</script>
