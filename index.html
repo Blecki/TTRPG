@@ -55,12 +55,12 @@
       <div>Available Features: <span id="COUNT_AVAILABLE_FEATURES"></span></div>
       <div>
         <table>
-          <tr><td>STR:</td><td><select id="STR_SELECT" onchange="setCharacterStat('STR',this.value); refresh();"></select><td><td>FINAL:</td><td><span id="FINAL_STR"></span></td><td>MOD:</td><td><span id="MOD_STR"></span></td></tr>
-          <tr><td>DEX:</td><td><select id="DEX_SELECT" onchange="setCharacterStat('DEX',this.value); refresh();"></select><td><td>FINAL:</td><td><span id="FINAL_DEX"></span></td><td>MOD:</td><td><span id="MOD_DEX"></span></td></tr>
-          <tr><td>CON:</td><td><select id="CON_SELECT" onchange="setCharacterStat('CON',this.value); refresh();"></select><td><td>FINAL:</td><td><span id="FINAL_CON"></span></td><td>MOD:</td><td><span id="MOD_CON"></span></td></tr>
-          <tr><td>INT:</td><td><select id="INT_SELECT" onchange="setCharacterStat('INT',this.value); refresh();"></select><td><td>FINAL:</td><td><span id="FINAL_INT"></span></td><td>MOD:</td><td><span id="MOD_INT"></span></td></tr>
-          <tr><td>WIS:</td><td><select id="WIS_SELECT" onchange="setCharacterStat('WIS',this.value); refresh();"></select><td><td>FINAL:</td><td><span id="FINAL_WIS"></span></td><td>MOD:</td><td><span id="MOD_WIS"></span></td></tr>
-          <tr><td>CHA:</td><td><select id="CHA_SELECT" onchange="setCharacterStat('CHA',this.value); refresh();"></select><td><td>FINAL:</td><td><span id="FINAL_CHA"></span></td><td>MOD:</td><td><span id="MOD_CHA"></span></td></tr>
+          <tr><td>STR:</td><td><select id="STR_SELECT" onchange="setCharacterStat('STR',parseInt(this.value)); refresh();"></select><td><td>FINAL:</td><td><span id="FINAL_STR"></span></td><td>MOD:</td><td><span id="MOD_STR"></span></td></tr>
+          <tr><td>DEX:</td><td><select id="DEX_SELECT" onchange="setCharacterStat('DEX',parseInt(this.value)); refresh();"></select><td><td>FINAL:</td><td><span id="FINAL_DEX"></span></td><td>MOD:</td><td><span id="MOD_DEX"></span></td></tr>
+          <tr><td>CON:</td><td><select id="CON_SELECT" onchange="setCharacterStat('CON',parseInt(this.value)); refresh();"></select><td><td>FINAL:</td><td><span id="FINAL_CON"></span></td><td>MOD:</td><td><span id="MOD_CON"></span></td></tr>
+          <tr><td>INT:</td><td><select id="INT_SELECT" onchange="setCharacterStat('INT',parseInt(this.value)); refresh();"></select><td><td>FINAL:</td><td><span id="FINAL_INT"></span></td><td>MOD:</td><td><span id="MOD_INT"></span></td></tr>
+          <tr><td>WIS:</td><td><select id="WIS_SELECT" onchange="setCharacterStat('WIS',parseInt(this.value)); refresh();"></select><td><td>FINAL:</td><td><span id="FINAL_WIS"></span></td><td>MOD:</td><td><span id="MOD_WIS"></span></td></tr>
+          <tr><td>CHA:</td><td><select id="CHA_SELECT" onchange="setCharacterStat('CHA',parseInt(this.value)); refresh();"></select><td><td>FINAL:</td><td><span id="FINAL_CHA"></span></td><td>MOD:</td><td><span id="MOD_CHA"></span></td></tr>
         </table>
       </div>
       <div>Armor Class: <span id="FINAL_ARMOR_CLASS"></span></div>
@@ -71,6 +71,8 @@
     <div style="width:33%; border:1px solid black; border-radius: 5px; padding:5px; margin:5px;">
       <div><h3>Proficiencies</h3></div>
       <div id="PROFICIENCIES"></div>
+      <div><h3>Other Proficiencies</h3></div>
+      <div id="OTHER_PROFICIENCIES"></div>
     </div>
     <div style="width:33%; border:1px solid black; border-radius: 5px; padding:5px; margin:5px;">
       <div><h3>Additional Features</h3></div>
@@ -88,7 +90,7 @@
       <div><h3>Choose from these features.</h3></div>
       <div>
         Filter by Tag: <select id="FILTER_TAG" onchange="refresh()"><option value="">All</option></select> 
-        <input type="checkbox" id="FILTER_AVAILABLE" checked></input>Available Only
+        <input type="checkbox" id="FILTER_AVAILABLE" checked onchange="refresh()"></input>Available Only
       </div>
       <div>Search: <input type="test" id="SEARCH_FEATURE" onchange="refresh()"></input></div>
       <div id="AVAILABLE_FEATURES"></div>
@@ -101,7 +103,7 @@
 <script>
   /* To implement: 
     Backgrounds? 
-    Mutually exclusive features
+      - One off features - select 'one from this set', does not count against total.
     The entire feature list
     Spells as features
     Full proficiency list
@@ -109,15 +111,46 @@
     Hover popups on every possible calculation to explain where the total came from.
   */
 
+  var STATS_LIST = [
+    "STR", "DEX", "CON", "INT", "WIS", "CHA" 
+  ];
+
   var PROFICIENCIES = [
+    { NAME: "ATHLETICS", STAT: "STR" },
+    { NAME: "ACROBATICS", STAT: "DEX" },
+    { NAME: "SLEIGHT OF HAND", STAT: "DEX" },
+    { NAME: "STEALTH", STAT: "DEX" },
     { NAME: "ARCANA", STAT: "INT" },
-    { NAME: "INVESTIGATION", STAT: "INT" }
+    { NAME: "HISTORY", STAT: "INT" },
+    { NAME: "INVESTIGATION", STAT: "INT" },
+    { NAME: "NATURE", STAT: "INT" },
+    { NAME: "RELIGION", STAT: "INT" },
+    { NAME: "ANIMAL HANDLING", STAT: "WIS" },
+    { NAME: "INSIGHT", STAT: "WIS" },
+    { NAME: "MEDICINE", STAT: "WIS" },
+    { NAME: "PERCEPTION", STAT: "WIS" },
+    { NAME: "SURVIVAL", STAT: "WIS" },
+    { NAME: "DECEPTION", STAT: "CHA" },
+    { NAME: "INTIMIDATION", STAT: "CHA" },
+    { NAME: "PERFORMANCE", STAT: "CHA" },
+    { NAME: "PERSUASION", STAT: "CHA" },
+    { NAME: "EQUIPMENT: SHIELDS", STAT: "" },
+    { NAME: "EQUIPMENT: SIMPLE WEAPONS", STAT: "" },
+    { NAME: "EQUIPMENT: MARTIAL WEAPONS", STAT: "" },
+    { NAME: "EQUIPMENT: LIGHT ARMOR", STAT: "" },
+    { NAME: "EQUIPMENT: MUSICAL INSTRUMENT", STAT: "" },
+    { NAME: "EQUIPMENT: MEDIUM ARMOR", STAT: "" },
+    { NAME: "EQUIPMENT: SHORTSWORDS", STAT: "" },
+    { NAME: "EQUIPMENT: THIEV'S TOOLS", STAT: "" },
+    { NAME: "EQUIPMENT: OTHER TOOL", STAT: "" },
+    { NAME: "EQUIPMENT: HEAVY ARMOR", STAT: "" },
+    { NAME: "LANGUAGE", STAT: "" }
   ];
 
   function makeBaseProficiencies() {
     var r = [];
     for (var prof of PROFICIENCIES)
-      r.push({NAME: prof.NAME, STAT: prof.STAT, PROF: false, EXPERTISE: false, BONUS: 0 });
+      r.push({NAME: prof.NAME, STAT: prof.STAT, MULTIPLIER: 0, BONUS: 0 });
     return r;
   }
 
@@ -190,14 +223,26 @@
     if (stat >= 18 && stat < 20) return 4;
     if (stat >= 20 && stat < 22) return 5;
     if (stat >= 22 && stat < 24) return 6;
+    if (stat >= 24 && stat < 26) return 7;
+    if (stat >= 26 && stat < 28) return 8;
+    if (stat >= 28 && stat < 30) return 9;
+    if (stat >= 30 && stat < 32) return 10;
+    if (stat >= 32 && stat < 34) return 11;
   }
 
   function applyFeatures() {
     resetCharacterStats();
     sortCharacterFeatures();
+
+    CHARACTER_BASE.PROFICIENCY_BONUS = 2;
+    CHARACTER_BASE.FEATURE_POINTS = 2;    
+    CHARACTER_BASE.PROFICIENCIES = makeBaseProficiencies();
+    CHARACTER_BASE.ADDITIONAL_FEATURES = [];
+
     for (var feature of CHARACTER_BASE.CHOSEN_FEATURES)
       if (feature.APPLY_STATS)
         feature.APPLY_STATS(feature, CHARACTER_BASE);
+
     CHARACTER_BASE.MODIFIERS = {
       STR: calculateModifier(CHARACTER_BASE.STATS.STR),
       DEX: calculateModifier(CHARACTER_BASE.STATS.DEX),
@@ -206,19 +251,19 @@
       WIS: calculateModifier(CHARACTER_BASE.STATS.WIS),
       CHA: calculateModifier(CHARACTER_BASE.STATS.CHA)      
     };
+
     CHARACTER_BASE.HIT_POINTS = (10 + CHARACTER_BASE.MODIFIERS.CON) * CHARACTER_BASE.LEVEL;
     CHARACTER_BASE.ARMOR_CLASS = 10 + CHARACTER_BASE.MODIFIERS.DEX;
-    CHARACTER_BASE.PROFICIENCY_BONUS = 2;
-    CHARACTER_BASE.FEATURE_POINTS = 2;    
-    CHARACTER_BASE.PROFICIENCIES = makeBaseProficiencies();
-    CHARACTER_BASE.ADDITIONAL_FEATURES = [];
     for (var feature of CHARACTER_BASE.CHOSEN_FEATURES)
       if (feature.APPLY_FEATURE)
         feature.APPLY_FEATURE(feature, CHARACTER_BASE);
     for (var prof of CHARACTER_BASE.PROFICIENCIES) {
-      prof.BONUS = CHARACTER_BASE.MODIFIERS[prof.STAT];
-      if (prof.PROF) prof.BONUS += CHARACTER_BASE.PROFICIENCY_BONUS;
-      if (prof.EXPERTISE) prof.BONUS += CHARACTER_BASE.PROFICIENCY_BONUS;
+      if (prof.STAT != "") {
+        prof.BONUS = CHARACTER_BASE.MODIFIERS[prof.STAT];
+        prof.BONUS += (CHARACTER_BASE.PROFICIENCY_BONUS * prof.MULTIPLIER);
+      }
+      else
+        prof.BONUS = prof.MULTIPLIER;
     }
   }
 
@@ -234,7 +279,7 @@
     { 
       NAME: "Unarmored Defense (CON)", 
       DESCRIPTION: "When not wearing armor, add your CON modifier to AC",
-      SEQUENCE: 0,
+      SEQUENCE: 1,
       REQUIREMENTS: "CON > 14, Can't have Unarmored Defense (WIS)",
       AVAILABLE: (f, c) => c.STATS.CON > 14 && !hasFeature("Unarmored Defense (WIS)"),
       APPLY_STATS: (f, c) => {},
@@ -244,7 +289,7 @@
     { 
       NAME: "Unarmored Defense (WIS)", 
       DESCRIPTION: "When not wearing armor, add your WIS modifier to AC",
-      SEQUENCE: 0,
+      SEQUENCE: 1,
       REQUIREMENTS: "WIS > 14, Can't have Unarmored Defense (CON)",
       AVAILABLE: (f, c) => c.STATS.WIS > 14 && !hasFeature("Unarmored Defense (CON)"),
       APPLY_STATS: (f, c) => {},
@@ -254,7 +299,7 @@
     { 
       NAME: "Toughness", 
       DESCRIPTION: "Your HP increases by CON modifer points per level.",
-      SEQUENCE: 0,
+      SEQUENCE: 1,
       REQUIREMENTS: "",
       AVAILABLE: true,
       APPLY_STATS: (f, c) => {},
@@ -262,29 +307,40 @@
       TAGS: [ "COMMON", "HIT POINTS" ]
     },
     { 
-      NAME: "EXTRA ATTACK", 
-      DESCRIPTION: "When you take the attack action, you can make an additional attack.",
-      SEQUENCE: 1,
-      REQUIREMENTS: "LEVEL 5",
-      AVAILABLE: (f, c) => c.LEVEL >= 5,
-      APPLY_STATS: (f, c) => {},
-      APPLY_FEATURE: (f, c) => { c.ADDITIONAL_FEATURES.push(f); },
-      TAGS: [ "FIGHTER" ]
-    },
-    { 
-      NAME: "ARCANIST", 
-      DESCRIPTION: "Gain proficiency in the arcana skill.",
+      NAME: "PROFICIENT", 
+      DESCRIPTION: "Gain proficiency in a skill.",
       SEQUENCE: 1,
       REQUIREMENTS: "",
       AVAILABLE: (f, c) => true,
       APPLY_STATS: (f, c) => {},
-      APPLY_FEATURE: (f, c) => { findProf(c, 'ARCANA').PROF = true; },
-      TAGS: [ "PROFICIENCY", "INTELLIGENCE" ]
+      APPLY_FEATURE: (f, c) => { 
+        var prof = findProf(c, f.CHOICE); 
+        if (prof) {
+          prof.MULTIPLIER += 1;
+          prof.SPECIFICATION = f.SPECIFICATION;
+        } 
+      },
+      TAGS: [ "PROFICIENCY", "COMMON", "STACKABLE" ],
+      CHOICE: "",
+      SPECIFICATION: "",
+      CUSTOM_TILE: (f, c, e) => {
+        var selector = makeSelector(PROFICIENCIES.map(p => p.NAME));
+        selector.value = f.CHOICE;
+        selector.onchange = () => { f.CHOICE = selector.value; refresh(); }
+        e.appendChild(makeTextDiv("Choose skill:"));
+        e.appendChild(selector);
+        e.appendChild(makeTextDiv("Specify Instrument, Tool, or Language:"));
+        var input = document.createElement('input');
+        input.width = '100%';
+        input.value = f.SPECIFICATION;
+        input.onchange = () => { f.SPECIFICATION = input.value; refresh(); }
+        e.appendChild(input);
+      }
     },
     { 
       NAME: "TALENTED", 
       DESCRIPTION: "Your proficiency bonus increases by 1.",
-      SEQUENCE: 1,
+      SEQUENCE: 0,
       REQUIREMENTS: "LEVEL 4",
       AVAILABLE: (f, c) => c.LEVEL >= 4,
       APPLY_STATS: (f, c) => {},
@@ -294,7 +350,7 @@
     { 
       NAME: "SAVANT", 
       DESCRIPTION: "Your proficiency bonus increases by 1.",
-      SEQUENCE: 1,
+      SEQUENCE: 0,
       REQUIREMENTS: "LEVEL 8, TALENTED",
       AVAILABLE: (f, c) => c.LEVEL >= 8 && hasFeature('TALENTED'),
       APPLY_STATS: (f, c) => {},
@@ -314,14 +370,275 @@
     { 
       NAME: "SHIELD (SPELL)", 
       DESCRIPTION: "SHIELD SPELL",
-      SEQUENCE: 1,
+      SEQUENCE: 2,
       REQUIREMENTS: "SPELLCASTING: ABJURATION",
       AVAILABLE: (f, c) => hasFeature("SPELLCASTING: ABJURATION"),
       APPLY_STATS: (f, c) => {},
       APPLY_FEATURE: (f, c) => { c.ADDITIONAL_FEATURES.push(f); },
       TAGS: [ "SPELLCASTING", "ABJURATION", "SPELL" ]
+    },
+    { 
+      NAME: "ENDURING", 
+      DESCRIPTION: "Increase your feature pool by 2 points.",
+      SEQUENCE: 2,
+      REQUIREMENTS: "",
+      AVAILABLE: (f, c) => true,
+      APPLY_STATS: (f, c) => { c.FEATURE_POINTS += 2; },
+      APPLY_FEATURE: (f, c) => { },
+      TAGS: [ "COMMON", "STACKABLE" ]
+    },
+    { 
+      NAME: "ASI (1)", 
+      DESCRIPTION: "Increase two stats by 1 or one stat by 2.",
+      SEQUENCE: 0,
+      REQUIREMENTS: "LEVEL 4",
+      AVAILABLE: (f, c) => c.LEVEL >= 4,
+      APPLY_STATS: (f, c) => { console.log("APPLY ASI"); c.STATS[f.FIRST_CHOICE] += 1; c.STATS[f.SECOND_CHOICE] += 1; },
+      APPLY_FEATURE: (f, c) => {},
+      TAGS: [ "COMMON", "ASI" ],
+      FIRST_CHOICE: "STR",
+      SECOND_CHOICE: "STR",
+      CUSTOM_TILE: (f, c, e) => {
+        var firstSelector = makeSelector(STATS_LIST);
+        firstSelector.value = f.FIRST_CHOICE;
+        firstSelector.onchange = () => { f.FIRST_CHOICE = firstSelector.value; refresh(); }
+        var secondSelector = makeSelector(STATS_LIST);
+        secondSelector.value = f.SECOND_CHOICE;
+        secondSelector.onchange = () => { f.SECOND_CHOICE = secondSelector.value; refresh(); }
+        e.appendChild(makeTextDiv("Choose first stat to increase:"));
+        e.appendChild(firstSelector);
+        e.appendChild(makeTextDiv("Choose second stat to increase:"));
+        e.appendChild(secondSelector);
+      }
+    },
+    { 
+      NAME: "ASI (2)", 
+      DESCRIPTION: "Increase two stats by 1 or one stat by 2.",
+      SEQUENCE: 0,
+      REQUIREMENTS: "LEVEL 8",
+      AVAILABLE: (f, c) => c.LEVEL >= 8,
+      APPLY_STATS: (f, c) => { console.log("APPLY ASI"); c.STATS[f.FIRST_CHOICE] += 1; c.STATS[f.SECOND_CHOICE] += 1; },
+      APPLY_FEATURE: (f, c) => {},
+      TAGS: [ "COMMON", "ASI" ],
+      FIRST_CHOICE: "STR",
+      SECOND_CHOICE: "STR",
+      CUSTOM_TILE: (f, c, e) => {
+        var firstSelector = makeSelector(STATS_LIST);
+        firstSelector.value = f.FIRST_CHOICE;
+        firstSelector.onchange = () => { f.FIRST_CHOICE = firstSelector.value; refresh(); }
+        var secondSelector = makeSelector(STATS_LIST);
+        secondSelector.value = f.SECOND_CHOICE;
+        secondSelector.onchange = () => { f.SECOND_CHOICE = secondSelector.value; refresh(); }
+        e.appendChild(makeTextDiv("Choose first stat to increase:"));
+        e.appendChild(firstSelector);
+        e.appendChild(makeTextDiv("Choose second stat to increase:"));
+        e.appendChild(secondSelector);
+      }
+    },
+    { 
+      NAME: "ASI (3)", 
+      DESCRIPTION: "Increase two stats by 1 or one stat by 2.",
+      SEQUENCE: 0,
+      REQUIREMENTS: "LEVEL 12",
+      AVAILABLE: (f, c) => c.LEVEL >= 12,
+      APPLY_STATS: (f, c) => { console.log("APPLY ASI"); c.STATS[f.FIRST_CHOICE] += 1; c.STATS[f.SECOND_CHOICE] += 1; },
+      APPLY_FEATURE: (f, c) => {},
+      TAGS: [ "COMMON", "ASI" ],
+      FIRST_CHOICE: "STR",
+      SECOND_CHOICE: "STR",
+      CUSTOM_TILE: (f, c, e) => {
+        var firstSelector = makeSelector(STATS_LIST);
+        firstSelector.value = f.FIRST_CHOICE;
+        firstSelector.onchange = () => { f.FIRST_CHOICE = firstSelector.value; refresh(); }
+        var secondSelector = makeSelector(STATS_LIST);
+        secondSelector.value = f.SECOND_CHOICE;
+        secondSelector.onchange = () => { f.SECOND_CHOICE = secondSelector.value; refresh(); }
+        e.appendChild(makeTextDiv("Choose first stat to increase:"));
+        e.appendChild(firstSelector);
+        e.appendChild(makeTextDiv("Choose second stat to increase:"));
+        e.appendChild(secondSelector);
+      }
+    },
+    { 
+      NAME: "ASI (4)", 
+      DESCRIPTION: "Increase two stats by 1 or one stat by 2.",
+      SEQUENCE: 0,
+      REQUIREMENTS: "LEVEL 14",
+      AVAILABLE: (f, c) => c.LEVEL >= 14,
+      APPLY_STATS: (f, c) => { console.log("APPLY ASI"); c.STATS[f.FIRST_CHOICE] += 1; c.STATS[f.SECOND_CHOICE] += 1; },
+      APPLY_FEATURE: (f, c) => {},
+      TAGS: [ "COMMON", "ASI" ],
+      FIRST_CHOICE: "STR",
+      SECOND_CHOICE: "STR",
+      CUSTOM_TILE: (f, c, e) => {
+        var firstSelector = makeSelector(STATS_LIST);
+        firstSelector.value = f.FIRST_CHOICE;
+        firstSelector.onchange = () => { f.FIRST_CHOICE = firstSelector.value; refresh(); }
+        var secondSelector = makeSelector(STATS_LIST);
+        secondSelector.value = f.SECOND_CHOICE;
+        secondSelector.onchange = () => { f.SECOND_CHOICE = secondSelector.value; refresh(); }
+        e.appendChild(makeTextDiv("Choose first stat to increase:"));
+        e.appendChild(firstSelector);
+        e.appendChild(makeTextDiv("Choose second stat to increase:"));
+        e.appendChild(secondSelector);
+      }
+    },
+    { 
+      NAME: "ASI (5)", 
+      DESCRIPTION: "Increase two stats by 1 or one stat by 2.",
+      SEQUENCE: 0,
+      REQUIREMENTS: "LEVEL 16",
+      AVAILABLE: (f, c) => c.LEVEL >= 16,
+      APPLY_STATS: (f, c) => { console.log("APPLY ASI"); c.STATS[f.FIRST_CHOICE] += 1; c.STATS[f.SECOND_CHOICE] += 1; },
+      APPLY_FEATURE: (f, c) => {},
+      TAGS: [ "COMMON", "ASI" ],
+      FIRST_CHOICE: "STR",
+      SECOND_CHOICE: "STR",
+      CUSTOM_TILE: (f, c, e) => {
+        var firstSelector = makeSelector(STATS_LIST);
+        firstSelector.value = f.FIRST_CHOICE;
+        firstSelector.onchange = () => { f.FIRST_CHOICE = firstSelector.value; refresh(); }
+        var secondSelector = makeSelector(STATS_LIST);
+        secondSelector.value = f.SECOND_CHOICE;
+        secondSelector.onchange = () => { f.SECOND_CHOICE = secondSelector.value; refresh(); }
+        e.appendChild(makeTextDiv("Choose first stat to increase:"));
+        e.appendChild(firstSelector);
+        e.appendChild(makeTextDiv("Choose second stat to increase:"));
+        e.appendChild(secondSelector);
+      }
+    },
+    { 
+      NAME: "ASI (6)", 
+      DESCRIPTION: "Increase two stats by 1 or one stat by 2.",
+      SEQUENCE: 0,
+      REQUIREMENTS: "LEVEL 20",
+      AVAILABLE: (f, c) => c.LEVEL >= 20,
+      APPLY_STATS: (f, c) => { console.log("APPLY ASI"); c.STATS[f.FIRST_CHOICE] += 1; c.STATS[f.SECOND_CHOICE] += 1; },
+      APPLY_FEATURE: (f, c) => {},
+      TAGS: [ "COMMON", "ASI" ],
+      FIRST_CHOICE: "STR",
+      SECOND_CHOICE: "STR",
+      CUSTOM_TILE: (f, c, e) => {
+        var firstSelector = makeSelector(STATS_LIST);
+        firstSelector.value = f.FIRST_CHOICE;
+        firstSelector.onchange = () => { f.FIRST_CHOICE = firstSelector.value; refresh(); }
+        var secondSelector = makeSelector(STATS_LIST);
+        secondSelector.value = f.SECOND_CHOICE;
+        secondSelector.onchange = () => { f.SECOND_CHOICE = secondSelector.value; refresh(); }
+        e.appendChild(makeTextDiv("Choose first stat to increase:"));
+        e.appendChild(firstSelector);
+        e.appendChild(makeTextDiv("Choose second stat to increase:"));
+        e.appendChild(secondSelector);
+      }
+    },
+    { 
+      NAME: "RAGE", 
+      DESCRIPTION: "Spend 1 feature point to enter a rage. While raging, you have advantage on strength based saving throws and checks, you gain resistence to bludgeoning, piercing, and slashing damage, and you can add your proficiency bonus to the damage of melee attacks.",
+      SEQUENCE: 2,
+      REQUIREMENTS: "",
+      AVAILABLE: (f, c) => true,
+      APPLY_STATS: (f, c) => {},
+      APPLY_FEATURE: (f, c) => { c.ADDITIONAL_FEATURES.push(f); },
+      TAGS: [ "BARBARIAN" ]
+    },
+    { 
+      NAME: "RECKLESS ATTACK", 
+      DESCRIPTION: "",
+      SEQUENCE: 2,
+      REQUIREMENTS: "LEVEL 2",
+      AVAILABLE: (f, c) => c.LEVEL >= 2,
+      APPLY_STATS: (f, c) => {},
+      APPLY_FEATURE: (f, c) => { c.ADDITIONAL_FEATURES.push(f); },
+      TAGS: [ "BARBARIAN" ]
+    },
+    { 
+      NAME: "DANGER SENSE", 
+      DESCRIPTION: "",
+      SEQUENCE: 2,
+      REQUIREMENTS: "LEVEL 2",
+      AVAILABLE: (f, c) => c.LEVEL >= 2,
+      APPLY_STATS: (f, c) => {},
+      APPLY_FEATURE: (f, c) => { c.ADDITIONAL_FEATURES.push(f); },
+      TAGS: [ "BARBARIAN" ]
+    },
+    { 
+      NAME: "FAST MOVEMENT", 
+      DESCRIPTION: "",
+      SEQUENCE: 2,
+      REQUIREMENTS: "LEVEL 5",
+      AVAILABLE: (f, c) => c.LEVEL >= 5,
+      APPLY_STATS: (f, c) => {},
+      APPLY_FEATURE: (f, c) => { c.ADDITIONAL_FEATURES.push(f); },
+      TAGS: [ "BARBARIAN" ]
+    },
+    { 
+      NAME: "FERAL INSTINCT", 
+      DESCRIPTION: "",
+      SEQUENCE: 2,
+      REQUIREMENTS: "LEVEL 7",
+      AVAILABLE: (f, c) => c.LEVEL >= 7,
+      APPLY_STATS: (f, c) => {},
+      APPLY_FEATURE: (f, c) => { c.ADDITIONAL_FEATURES.push(f); },
+      TAGS: [ "BARBARIAN" ]
+    },
+    { 
+      NAME: "BRUTAL CRITICAL", 
+      DESCRIPTION: "",
+      SEQUENCE: 2,
+      REQUIREMENTS: "LEVEL 9",
+      AVAILABLE: (f, c) => c.LEVEL >= 9,
+      APPLY_STATS: (f, c) => {},
+      APPLY_FEATURE: (f, c) => { c.ADDITIONAL_FEATURES.push(f); },
+      TAGS: [ "BARBARIAN" ]
+    },
+    { 
+      NAME: "RELENTLESS RAGE", 
+      DESCRIPTION: "",
+      SEQUENCE: 2,
+      REQUIREMENTS: "LEVEL 11, RAGE",
+      AVAILABLE: (f, c) => c.LEVEL >= 11 && hasFeature("RAGE"),
+      APPLY_STATS: (f, c) => {},
+      APPLY_FEATURE: (f, c) => { c.ADDITIONAL_FEATURES.push(f); },
+      TAGS: [ "BARBARIAN" ]
+    },
+    { 
+      NAME: "PERSISTENT RAGE", 
+      DESCRIPTION: "",
+      SEQUENCE: 2,
+      REQUIREMENTS: "LEVEL 15, RELENTLESS RAGE",
+      AVAILABLE: (f, c) => c.LEVEL >= 15 && hasFeature("RELENTLESS RAGE"),
+      APPLY_STATS: (f, c) => {},
+      APPLY_FEATURE: (f, c) => { c.ADDITIONAL_FEATURES.push(f); },
+      TAGS: [ "BARBARIAN" ]
+    },
+    { 
+      NAME: "EXTRA ATTACK", 
+      DESCRIPTION: "When you take the attack action, you can make an additional attack.",
+      SEQUENCE: 2,
+      REQUIREMENTS: "LEVEL 5",
+      AVAILABLE: (f, c) => c.LEVEL >= 5,
+      APPLY_STATS: (f, c) => {},
+      APPLY_FEATURE: (f, c) => { c.ADDITIONAL_FEATURES.push(f); },
+      TAGS: [ "FIGHTER", "BARBARIAN" ]
     }
   ];
+
+  function makeTextDiv(text) {
+    var r = document.createElement("div");
+    r.innerText = text;
+    return r;
+  }
+
+  function makeSelector(options) {
+    var r = document.createElement("select");
+    for (var option of options) {
+      e = document.createElement("option");
+      e.value = option;
+      e.innerText = option;
+      r.appendChild(e);
+    }
+    return r;
+  }
 
   function cloneFeature(feature) {
     return {
@@ -330,8 +647,9 @@
       SEQUENCE: feature.SEQUENCE,
       REQUIREMENTS: feature.REQUIREMENTS,
       AVAILABLE: feature.AVAILABLE,
-      APPLY_STASTS: feature.APPLY_STATS,
-      APPLY_FEATURE: feature.APPLY_FEATURE
+      APPLY_STATS: feature.APPLY_STATS,
+      APPLY_FEATURE: feature.APPLY_FEATURE,
+      CUSTOM_TILE: feature.CUSTOM_TILE
     };
   }
 
@@ -378,17 +696,22 @@
     for (var feature of FEATURES) {
       if (search != "" && !feature.NAME.toUpperCase().includes(search.toUpperCase())) continue;
       if (filterTag != "" && !feature.TAGS.includes(filterTag)) continue;
-      var tile = buildFeatureTile(feature, feature => addFeature(cloneFeature(feature)));
+      var tile = buildFeatureTile(feature, false);
       var available = true;
       if (available) available &= CHARACTER_BASE.CHOSEN_FEATURES.length < CHARACTER_BASE.FEATURES_AVAILABLE();
       if (available) available &= isFeatureAvailable(feature);
       if (available && !feature.TAGS.includes("STACKABLE")) available &= !hasFeature(feature.NAME);
       if (document.getElementById("FILTER_AVAILABLE").checked && !available) continue;
-      if (available)
+      if (available) {
+        tile.onclick = (function(feature) { return () => {
+          console.log("Clicked on feature:");
+          console.log(feature);
+          addFeature(cloneFeature(feature));
+        }; })(feature);
         output.appendChild(tile);
+      }
       else {
         tile.disabled = true;
-        tile.onclick = null;
         tile.style.border = "1px solid gray";
         output.appendChild(tile);
       }
@@ -399,9 +722,12 @@
     var output = document.getElementById("SELECTED_FEATURES");
     clearElement(output);
     for (var feature of CHARACTER_BASE.CHOSEN_FEATURES) {
-      output.appendChild(buildFeatureTile(feature, (feature) => {
+      var tile = buildFeatureTile(feature, true, (feature) => {
         removeFeature(feature);
-      }));
+      });
+      if (feature.hasOwnProperty("CUSTOM_TILE") && feature.CUSTOM_TILE instanceof Function)
+        feature.CUSTOM_TILE(feature, CHARACTER_BASE, tile);
+      output.appendChild(tile);
     }
   }
 
@@ -409,19 +735,28 @@
     var output = document.getElementById("ADDITIONAL_FEATURES");
     clearElement(output);
     for (var feature of CHARACTER_BASE.ADDITIONAL_FEATURES) {
-      output.appendChild(buildFeatureTile(feature, (feature) => { }));
+      output.appendChild(buildFeatureTile(feature, false));
     }
   }
 
-  function buildFeatureTile(feature, callback) {
+  function buildFeatureTile(feature, removeButton, removeCallback) {
     var result = document.createElement('div');
     result.style.border = '3px solid green';
     result.style.borderRadius = '5px';
     result.style.margin = '5px';
 
-    result.innerHTML = `<table><tr><td>${feature.NAME}</td><td>${feature.REQUIREMENTS}</td></tr><tr><td colspan=2>${feature.DESCRIPTION}</td></tr></table>`;
+    var table = document.createElement('div');
+    table.innerHTML = `<table><tr><td>${feature.NAME}</td><td>${feature.REQUIREMENTS}</td></tr><tr><td colspan=2>${feature.DESCRIPTION}</td></tr></table>`;
 
-    result.onclick = () => callback(feature);
+    if (removeButton) {
+      var r = document.createElement('button');
+      r.innerText = "X";
+      r.style.cssFloat = "right";
+      r.onclick = () => removeCallback(feature);
+      result.appendChild(r);
+    }
+
+    result.appendChild(table);
 
     return result;
   }
@@ -455,7 +790,20 @@
     var prof_list = document.getElementById("PROFICIENCIES");
     prof_list.innerHTML = "";
     for (var prof of CHARACTER_BASE.PROFICIENCIES)
-      prof_list.innerHTML += `<div>${prof.NAME} (${prof.STAT}) - ${prof.BONUS}</div>`; 
+      if (prof.STAT != "")
+        prof_list.innerHTML += `<div>${prof.NAME} (${prof.STAT}) - ${prof.BONUS}</div>`; 
+
+    var other_prof_list = document.getElementById("OTHER_PROFICIENCIES");
+    other_prof_list.innerHTML = "";
+    for (var prof of CHARACTER_BASE.PROFICIENCIES)
+      if (prof.STAT == "" && prof.MULTIPLIER > 0) {
+        console.log(prof);
+        var html = `<div>${prof.NAME}`;
+        if (prof.hasOwnProperty('SPECIFICATION') && prof.SPECIFICATION != "")
+          html += ` - ${prof.SPECIFICATION}`;
+        html += `</div>`;        
+        other_prof_list.innerHTML += html;
+      }
   }
 
   function makeOption(value) {
