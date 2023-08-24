@@ -1,0 +1,10 @@
+{ 
+  NAME: "BRUTAL CRITICAL", 
+  DESCRIPTION: "",
+  SEQUENCE: 2,
+  REQUIREMENTS: "LEVEL 9",
+  AVAILABLE: (f, c) => c.LEVEL >= 9,
+  APPLY_STATS: (f, c) => {},
+  APPLY_FEATURE: (f, c) => { c.ADDITIONAL_FEATURES.push(f); },
+  TAGS: [ "BARBARIAN" ]
+}
