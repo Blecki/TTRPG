@@ -10,15 +10,15 @@
   FIRST_CHOICE: "STR",
   SECOND_CHOICE: "STR",
   CUSTOM_TILE: (f, c, e) => {
-    var firstSelector = makeSelector(STATS_LIST);
+    var firstSelector = FACTORY.select(STATS_LIST);
     firstSelector.value = f.FIRST_CHOICE;
-    firstSelector.onchange = () => { f.FIRST_CHOICE = firstSelector.value; refresh(); }
-    var secondSelector = makeSelector(STATS_LIST);
+    firstSelector.onchange = () => { f.FIRST_CHOICE = firstSelector.value; SHEET.refresh(); }
+    var secondSelector = FACTORY.select(STATS_LIST);
     secondSelector.value = f.SECOND_CHOICE;
-    secondSelector.onchange = () => { f.SECOND_CHOICE = secondSelector.value; refresh(); }
-    e.appendChild(makeTextDiv("Choose first stat to increase:"));
+    secondSelector.onchange = () => { f.SECOND_CHOICE = secondSelector.value; SHEET.refresh(); }
+    e.appendChild(FACTORY.text("Choose first stat to increase:"));
     e.appendChild(firstSelector);
-    e.appendChild(makeTextDiv("Choose second stat to increase:"));
+    e.appendChild(FACTORY.text("Choose second stat to increase:"));
     e.appendChild(secondSelector);
   }
 }
