@@ -106,7 +106,6 @@
       - One off features - select 'one from this set', does not count against total.
     The entire feature list
     Spells as features
-    Full proficiency list
     Equipment (applied after the features)
     Hover popups on every possible calculation to explain where the total came from.
   */
@@ -115,37 +114,8 @@
     "STR", "DEX", "CON", "INT", "WIS", "CHA" 
   ];
 
-  var PROFICIENCIES = [
-    { NAME: "ATHLETICS", STAT: "STR" },
-    { NAME: "ACROBATICS", STAT: "DEX" },
-    { NAME: "SLEIGHT OF HAND", STAT: "DEX" },
-    { NAME: "STEALTH", STAT: "DEX" },
-    { NAME: "ARCANA", STAT: "INT" },
-    { NAME: "HISTORY", STAT: "INT" },
-    { NAME: "INVESTIGATION", STAT: "INT" },
-    { NAME: "NATURE", STAT: "INT" },
-    { NAME: "RELIGION", STAT: "INT" },
-    { NAME: "ANIMAL HANDLING", STAT: "WIS" },
-    { NAME: "INSIGHT", STAT: "WIS" },
-    { NAME: "MEDICINE", STAT: "WIS" },
-    { NAME: "PERCEPTION", STAT: "WIS" },
-    { NAME: "SURVIVAL", STAT: "WIS" },
-    { NAME: "DECEPTION", STAT: "CHA" },
-    { NAME: "INTIMIDATION", STAT: "CHA" },
-    { NAME: "PERFORMANCE", STAT: "CHA" },
-    { NAME: "PERSUASION", STAT: "CHA" },
-    { NAME: "EQUIPMENT: SHIELDS", STAT: "" },
-    { NAME: "EQUIPMENT: SIMPLE WEAPONS", STAT: "" },
-    { NAME: "EQUIPMENT: MARTIAL WEAPONS", STAT: "" },
-    { NAME: "EQUIPMENT: LIGHT ARMOR", STAT: "" },
-    { NAME: "EQUIPMENT: MUSICAL INSTRUMENT", STAT: "" },
-    { NAME: "EQUIPMENT: MEDIUM ARMOR", STAT: "" },
-    { NAME: "EQUIPMENT: SHORTSWORDS", STAT: "" },
-    { NAME: "EQUIPMENT: THIEV'S TOOLS", STAT: "" },
-    { NAME: "EQUIPMENT: OTHER TOOL", STAT: "" },
-    { NAME: "EQUIPMENT: HEAVY ARMOR", STAT: "" },
-    { NAME: "LANGUAGE", STAT: "" }
-  ];
+  var PROFICIENCIES = [];
+  var FEATURES = [];
 
   function makeBaseProficiencies() {
     var r = [];
@@ -275,353 +245,54 @@
     purgeFeatures();
   }
 
-  var FEATURES = [
-    { 
-      NAME: "Unarmored Defense (CON)", 
-      DESCRIPTION: "When not wearing armor, add your CON modifier to AC",
-      SEQUENCE: 1,
-      REQUIREMENTS: "CON > 14, Can't have Unarmored Defense (WIS)",
-      AVAILABLE: (f, c) => c.STATS.CON > 14 && !hasFeature("Unarmored Defense (WIS)"),
-      APPLY_STATS: (f, c) => {},
-      APPLY_FEATURE: (f, c) => { c.ARMOR_CLASS += c.MODIFIERS.CON; },
-      TAGS: [ "COMMON", "ARMOR CLASS", "BARBARIAN" ]
-    },
-    { 
-      NAME: "Unarmored Defense (WIS)", 
-      DESCRIPTION: "When not wearing armor, add your WIS modifier to AC",
-      SEQUENCE: 1,
-      REQUIREMENTS: "WIS > 14, Can't have Unarmored Defense (CON)",
-      AVAILABLE: (f, c) => c.STATS.WIS > 14 && !hasFeature("Unarmored Defense (CON)"),
-      APPLY_STATS: (f, c) => {},
-      APPLY_FEATURE: (f, c) => { c.ARMOR_CLASS += c.MODIFIERS.WIS; },
-      TAGS: [ "COMMON", "ARMOR CLASS", "MONK" ]
-    },
-    { 
-      NAME: "Toughness", 
-      DESCRIPTION: "Your HP increases by CON modifer points per level.",
-      SEQUENCE: 1,
-      REQUIREMENTS: "",
-      AVAILABLE: true,
-      APPLY_STATS: (f, c) => {},
-      APPLY_FEATURE: (f, c) => { c.HIT_POINTS += (c.MODIFIERS.CON * c.LEVEL); },
-      TAGS: [ "COMMON", "HIT POINTS" ]
-    },
-    { 
-      NAME: "PROFICIENT", 
-      DESCRIPTION: "Gain proficiency in a skill.",
-      SEQUENCE: 1,
-      REQUIREMENTS: "",
-      AVAILABLE: (f, c) => true,
-      APPLY_STATS: (f, c) => {},
-      APPLY_FEATURE: (f, c) => { 
-        var prof = findProf(c, f.CHOICE); 
-        if (prof) {
-          prof.MULTIPLIER += 1;
-          prof.SPECIFICATION = f.SPECIFICATION;
-        } 
-      },
-      TAGS: [ "PROFICIENCY", "COMMON", "STACKABLE" ],
-      CHOICE: "",
-      SPECIFICATION: "",
-      CUSTOM_TILE: (f, c, e) => {
-        var selector = makeSelector(PROFICIENCIES.map(p => p.NAME));
-        selector.value = f.CHOICE;
-        selector.onchange = () => { f.CHOICE = selector.value; refresh(); }
-        e.appendChild(makeTextDiv("Choose skill:"));
-        e.appendChild(selector);
-        e.appendChild(makeTextDiv("Specify Instrument, Tool, or Language:"));
-        var input = document.createElement('input');
-        input.width = '100%';
-        input.value = f.SPECIFICATION;
-        input.onchange = () => { f.SPECIFICATION = input.value; refresh(); }
-        e.appendChild(input);
-      }
-    },
-    { 
-      NAME: "TALENTED", 
-      DESCRIPTION: "Your proficiency bonus increases by 1.",
-      SEQUENCE: 0,
-      REQUIREMENTS: "LEVEL 4",
-      AVAILABLE: (f, c) => c.LEVEL >= 4,
-      APPLY_STATS: (f, c) => {},
-      APPLY_FEATURE: (f, c) => { c.PROFICIENCY_BONUS += 1; },
-      TAGS: [ "PROFICIENCY", "COMMON" ]
-    },
-    { 
-      NAME: "SAVANT", 
-      DESCRIPTION: "Your proficiency bonus increases by 1.",
-      SEQUENCE: 0,
-      REQUIREMENTS: "LEVEL 8, TALENTED",
-      AVAILABLE: (f, c) => c.LEVEL >= 8 && hasFeature('TALENTED'),
-      APPLY_STATS: (f, c) => {},
-      APPLY_FEATURE: (f, c) => { c.PROFICIENCY_BONUS += 1; },
-      TAGS: [ "PROFICIENCY", "COMMON" ]
-    },
-    { 
-      NAME: "SPELLCASTING: ABJURATION", 
-      DESCRIPTION: "You are able to learn and cast spells of the school of abjuration.",
-      SEQUENCE: 1,
-      REQUIREMENTS: "INT > 14",
-      AVAILABLE: (f, c) => c.STATS.INT > 14,
-      APPLY_STATS: (f, c) => {},
-      APPLY_FEATURE: (f, c) => { c.ADDITIONAL_FEATURES.push(f); },
-      TAGS: [ "SPELLCASTING", "ABJURATION" ]
-    },
-    { 
-      NAME: "SHIELD (SPELL)", 
-      DESCRIPTION: "SHIELD SPELL",
-      SEQUENCE: 2,
-      REQUIREMENTS: "SPELLCASTING: ABJURATION",
-      AVAILABLE: (f, c) => hasFeature("SPELLCASTING: ABJURATION"),
-      APPLY_STATS: (f, c) => {},
-      APPLY_FEATURE: (f, c) => { c.ADDITIONAL_FEATURES.push(f); },
-      TAGS: [ "SPELLCASTING", "ABJURATION", "SPELL" ]
-    },
-    { 
-      NAME: "ENDURING", 
-      DESCRIPTION: "Increase your feature pool by 2 points.",
-      SEQUENCE: 2,
-      REQUIREMENTS: "",
-      AVAILABLE: (f, c) => true,
-      APPLY_STATS: (f, c) => { c.FEATURE_POINTS += 2; },
-      APPLY_FEATURE: (f, c) => { },
-      TAGS: [ "COMMON", "STACKABLE" ]
-    },
-    { 
-      NAME: "ASI (1)", 
-      DESCRIPTION: "Increase two stats by 1 or one stat by 2.",
-      SEQUENCE: 0,
-      REQUIREMENTS: "LEVEL 4",
-      AVAILABLE: (f, c) => c.LEVEL >= 4,
-      APPLY_STATS: (f, c) => { console.log("APPLY ASI"); c.STATS[f.FIRST_CHOICE] += 1; c.STATS[f.SECOND_CHOICE] += 1; },
-      APPLY_FEATURE: (f, c) => {},
-      TAGS: [ "COMMON", "ASI" ],
-      FIRST_CHOICE: "STR",
-      SECOND_CHOICE: "STR",
-      CUSTOM_TILE: (f, c, e) => {
-        var firstSelector = makeSelector(STATS_LIST);
-        firstSelector.value = f.FIRST_CHOICE;
-        firstSelector.onchange = () => { f.FIRST_CHOICE = firstSelector.value; refresh(); }
-        var secondSelector = makeSelector(STATS_LIST);
-        secondSelector.value = f.SECOND_CHOICE;
-        secondSelector.onchange = () => { f.SECOND_CHOICE = secondSelector.value; refresh(); }
-        e.appendChild(makeTextDiv("Choose first stat to increase:"));
-        e.appendChild(firstSelector);
-        e.appendChild(makeTextDiv("Choose second stat to increase:"));
-        e.appendChild(secondSelector);
-      }
-    },
-    { 
-      NAME: "ASI (2)", 
-      DESCRIPTION: "Increase two stats by 1 or one stat by 2.",
-      SEQUENCE: 0,
-      REQUIREMENTS: "LEVEL 8",
-      AVAILABLE: (f, c) => c.LEVEL >= 8,
-      APPLY_STATS: (f, c) => { console.log("APPLY ASI"); c.STATS[f.FIRST_CHOICE] += 1; c.STATS[f.SECOND_CHOICE] += 1; },
-      APPLY_FEATURE: (f, c) => {},
-      TAGS: [ "COMMON", "ASI" ],
-      FIRST_CHOICE: "STR",
-      SECOND_CHOICE: "STR",
-      CUSTOM_TILE: (f, c, e) => {
-        var firstSelector = makeSelector(STATS_LIST);
-        firstSelector.value = f.FIRST_CHOICE;
-        firstSelector.onchange = () => { f.FIRST_CHOICE = firstSelector.value; refresh(); }
-        var secondSelector = makeSelector(STATS_LIST);
-        secondSelector.value = f.SECOND_CHOICE;
-        secondSelector.onchange = () => { f.SECOND_CHOICE = secondSelector.value; refresh(); }
-        e.appendChild(makeTextDiv("Choose first stat to increase:"));
-        e.appendChild(firstSelector);
-        e.appendChild(makeTextDiv("Choose second stat to increase:"));
-        e.appendChild(secondSelector);
-      }
-    },
-    { 
-      NAME: "ASI (3)", 
-      DESCRIPTION: "Increase two stats by 1 or one stat by 2.",
-      SEQUENCE: 0,
-      REQUIREMENTS: "LEVEL 12",
-      AVAILABLE: (f, c) => c.LEVEL >= 12,
-      APPLY_STATS: (f, c) => { console.log("APPLY ASI"); c.STATS[f.FIRST_CHOICE] += 1; c.STATS[f.SECOND_CHOICE] += 1; },
-      APPLY_FEATURE: (f, c) => {},
-      TAGS: [ "COMMON", "ASI" ],
-      FIRST_CHOICE: "STR",
-      SECOND_CHOICE: "STR",
-      CUSTOM_TILE: (f, c, e) => {
-        var firstSelector = makeSelector(STATS_LIST);
-        firstSelector.value = f.FIRST_CHOICE;
-        firstSelector.onchange = () => { f.FIRST_CHOICE = firstSelector.value; refresh(); }
-        var secondSelector = makeSelector(STATS_LIST);
-        secondSelector.value = f.SECOND_CHOICE;
-        secondSelector.onchange = () => { f.SECOND_CHOICE = secondSelector.value; refresh(); }
-        e.appendChild(makeTextDiv("Choose first stat to increase:"));
-        e.appendChild(firstSelector);
-        e.appendChild(makeTextDiv("Choose second stat to increase:"));
-        e.appendChild(secondSelector);
-      }
-    },
-    { 
-      NAME: "ASI (4)", 
-      DESCRIPTION: "Increase two stats by 1 or one stat by 2.",
-      SEQUENCE: 0,
-      REQUIREMENTS: "LEVEL 14",
-      AVAILABLE: (f, c) => c.LEVEL >= 14,
-      APPLY_STATS: (f, c) => { console.log("APPLY ASI"); c.STATS[f.FIRST_CHOICE] += 1; c.STATS[f.SECOND_CHOICE] += 1; },
-      APPLY_FEATURE: (f, c) => {},
-      TAGS: [ "COMMON", "ASI" ],
-      FIRST_CHOICE: "STR",
-      SECOND_CHOICE: "STR",
-      CUSTOM_TILE: (f, c, e) => {
-        var firstSelector = makeSelector(STATS_LIST);
-        firstSelector.value = f.FIRST_CHOICE;
-        firstSelector.onchange = () => { f.FIRST_CHOICE = firstSelector.value; refresh(); }
-        var secondSelector = makeSelector(STATS_LIST);
-        secondSelector.value = f.SECOND_CHOICE;
-        secondSelector.onchange = () => { f.SECOND_CHOICE = secondSelector.value; refresh(); }
-        e.appendChild(makeTextDiv("Choose first stat to increase:"));
-        e.appendChild(firstSelector);
-        e.appendChild(makeTextDiv("Choose second stat to increase:"));
-        e.appendChild(secondSelector);
-      }
-    },
-    { 
-      NAME: "ASI (5)", 
-      DESCRIPTION: "Increase two stats by 1 or one stat by 2.",
-      SEQUENCE: 0,
-      REQUIREMENTS: "LEVEL 16",
-      AVAILABLE: (f, c) => c.LEVEL >= 16,
-      APPLY_STATS: (f, c) => { console.log("APPLY ASI"); c.STATS[f.FIRST_CHOICE] += 1; c.STATS[f.SECOND_CHOICE] += 1; },
-      APPLY_FEATURE: (f, c) => {},
-      TAGS: [ "COMMON", "ASI" ],
-      FIRST_CHOICE: "STR",
-      SECOND_CHOICE: "STR",
-      CUSTOM_TILE: (f, c, e) => {
-        var firstSelector = makeSelector(STATS_LIST);
-        firstSelector.value = f.FIRST_CHOICE;
-        firstSelector.onchange = () => { f.FIRST_CHOICE = firstSelector.value; refresh(); }
-        var secondSelector = makeSelector(STATS_LIST);
-        secondSelector.value = f.SECOND_CHOICE;
-        secondSelector.onchange = () => { f.SECOND_CHOICE = secondSelector.value; refresh(); }
-        e.appendChild(makeTextDiv("Choose first stat to increase:"));
-        e.appendChild(firstSelector);
-        e.appendChild(makeTextDiv("Choose second stat to increase:"));
-        e.appendChild(secondSelector);
-      }
-    },
-    { 
-      NAME: "ASI (6)", 
-      DESCRIPTION: "Increase two stats by 1 or one stat by 2.",
-      SEQUENCE: 0,
-      REQUIREMENTS: "LEVEL 20",
-      AVAILABLE: (f, c) => c.LEVEL >= 20,
-      APPLY_STATS: (f, c) => { console.log("APPLY ASI"); c.STATS[f.FIRST_CHOICE] += 1; c.STATS[f.SECOND_CHOICE] += 1; },
-      APPLY_FEATURE: (f, c) => {},
-      TAGS: [ "COMMON", "ASI" ],
-      FIRST_CHOICE: "STR",
-      SECOND_CHOICE: "STR",
-      CUSTOM_TILE: (f, c, e) => {
-        var firstSelector = makeSelector(STATS_LIST);
-        firstSelector.value = f.FIRST_CHOICE;
-        firstSelector.onchange = () => { f.FIRST_CHOICE = firstSelector.value; refresh(); }
-        var secondSelector = makeSelector(STATS_LIST);
-        secondSelector.value = f.SECOND_CHOICE;
-        secondSelector.onchange = () => { f.SECOND_CHOICE = secondSelector.value; refresh(); }
-        e.appendChild(makeTextDiv("Choose first stat to increase:"));
-        e.appendChild(firstSelector);
-        e.appendChild(makeTextDiv("Choose second stat to increase:"));
-        e.appendChild(secondSelector);
-      }
-    },
-    { 
-      NAME: "RAGE", 
-      DESCRIPTION: "Spend 1 feature point to enter a rage. While raging, you have advantage on strength based saving throws and checks, you gain resistence to bludgeoning, piercing, and slashing damage, and you can add your proficiency bonus to the damage of melee attacks.",
-      SEQUENCE: 2,
-      REQUIREMENTS: "",
-      AVAILABLE: (f, c) => true,
-      APPLY_STATS: (f, c) => {},
-      APPLY_FEATURE: (f, c) => { c.ADDITIONAL_FEATURES.push(f); },
-      TAGS: [ "BARBARIAN" ]
-    },
-    { 
-      NAME: "RECKLESS ATTACK", 
-      DESCRIPTION: "",
-      SEQUENCE: 2,
-      REQUIREMENTS: "LEVEL 2",
-      AVAILABLE: (f, c) => c.LEVEL >= 2,
-      APPLY_STATS: (f, c) => {},
-      APPLY_FEATURE: (f, c) => { c.ADDITIONAL_FEATURES.push(f); },
-      TAGS: [ "BARBARIAN" ]
-    },
-    { 
-      NAME: "DANGER SENSE", 
-      DESCRIPTION: "",
-      SEQUENCE: 2,
-      REQUIREMENTS: "LEVEL 2",
-      AVAILABLE: (f, c) => c.LEVEL >= 2,
-      APPLY_STATS: (f, c) => {},
-      APPLY_FEATURE: (f, c) => { c.ADDITIONAL_FEATURES.push(f); },
-      TAGS: [ "BARBARIAN" ]
-    },
-    { 
-      NAME: "FAST MOVEMENT", 
-      DESCRIPTION: "",
-      SEQUENCE: 2,
-      REQUIREMENTS: "LEVEL 5",
-      AVAILABLE: (f, c) => c.LEVEL >= 5,
-      APPLY_STATS: (f, c) => {},
-      APPLY_FEATURE: (f, c) => { c.ADDITIONAL_FEATURES.push(f); },
-      TAGS: [ "BARBARIAN" ]
-    },
-    { 
-      NAME: "FERAL INSTINCT", 
-      DESCRIPTION: "",
-      SEQUENCE: 2,
-      REQUIREMENTS: "LEVEL 7",
-      AVAILABLE: (f, c) => c.LEVEL >= 7,
-      APPLY_STATS: (f, c) => {},
-      APPLY_FEATURE: (f, c) => { c.ADDITIONAL_FEATURES.push(f); },
-      TAGS: [ "BARBARIAN" ]
-    },
-    { 
-      NAME: "BRUTAL CRITICAL", 
-      DESCRIPTION: "",
-      SEQUENCE: 2,
-      REQUIREMENTS: "LEVEL 9",
-      AVAILABLE: (f, c) => c.LEVEL >= 9,
-      APPLY_STATS: (f, c) => {},
-      APPLY_FEATURE: (f, c) => { c.ADDITIONAL_FEATURES.push(f); },
-      TAGS: [ "BARBARIAN" ]
-    },
-    { 
-      NAME: "RELENTLESS RAGE", 
-      DESCRIPTION: "",
-      SEQUENCE: 2,
-      REQUIREMENTS: "LEVEL 11, RAGE",
-      AVAILABLE: (f, c) => c.LEVEL >= 11 && hasFeature("RAGE"),
-      APPLY_STATS: (f, c) => {},
-      APPLY_FEATURE: (f, c) => { c.ADDITIONAL_FEATURES.push(f); },
-      TAGS: [ "BARBARIAN" ]
-    },
-    { 
-      NAME: "PERSISTENT RAGE", 
-      DESCRIPTION: "",
-      SEQUENCE: 2,
-      REQUIREMENTS: "LEVEL 15, RELENTLESS RAGE",
-      AVAILABLE: (f, c) => c.LEVEL >= 15 && hasFeature("RELENTLESS RAGE"),
-      APPLY_STATS: (f, c) => {},
-      APPLY_FEATURE: (f, c) => { c.ADDITIONAL_FEATURES.push(f); },
-      TAGS: [ "BARBARIAN" ]
-    },
-    { 
-      NAME: "EXTRA ATTACK", 
-      DESCRIPTION: "When you take the attack action, you can make an additional attack.",
-      SEQUENCE: 2,
-      REQUIREMENTS: "LEVEL 5",
-      AVAILABLE: (f, c) => c.LEVEL >= 5,
-      APPLY_STATS: (f, c) => {},
-      APPLY_FEATURE: (f, c) => { c.ADDITIONAL_FEATURES.push(f); },
-      TAGS: [ "FIGHTER", "BARBARIAN" ]
-    }
-  ];
+  function loadFeatures() {
+    fetch ( "https://api.github.com/repos/Blecki/TTRPG/contents/proficiencies.json", {
+      method: 'GET'
+    })
+    .then (response => {
+      response.json().then(data => {
+        PROFICIENCIES = JSON.parse(atob(data.content));
+        
+        fetch ( "https://api.github.com/repos/Blecki/TTRPG/contents/features", {
+          method: 'GET',
+          body: null,
+          headers: { },
+        })
+        .then(response => {
+          if (response.status !== 200) {
+            return;
+          }
+          
+          response.json().then(function(data) {
+            var count = 0;
+            var expected = data.length;
+            for (var feature of data) {
+              fetch ("https://api.github.com/repos/Blecki/TTRPG/contents/features" + "/" + feature.name, { 
+                method: 'GET'
+              })
+              .then(response => {
+                response.json().then(function(data) {
+                  var content = atob(data.content);
+
+                  var funcCode = "return " + content;
+                  var result = new Function(funcCode)();
+                  console.log(result);
+                  FEATURES.push(result);
+
+                  count += 1;
+                  if (count == expected) {
+                    console.log("Loaded Features");
+                    refresh();
+                  }
+                })
+              });
+            }
+          });
+        });
+        
+      });
+    });
+  }
 
   function makeTextDiv(text) {
     var r = document.createElement("div");
@@ -840,6 +511,6 @@
   makeStatSelector('INT');
   makeStatSelector('WIS');
   makeStatSelector('CHA');
-  refresh();
+  loadFeatures();
 
 </script>
