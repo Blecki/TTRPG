@@ -16,16 +16,16 @@
   CHOICE: "",
   SPECIFICATION: "",
   CUSTOM_TILE: (f, c, e) => {
-    var selector = makeSelector(PROFICIENCIES.map(p => p.NAME));
+    var selector = FACTORY.select(PROFICIENCIES.map(p => p.NAME));
     selector.value = f.CHOICE;
-    selector.onchange = () => { f.CHOICE = selector.value; refresh(); }
-    e.appendChild(makeTextDiv("Choose skill:"));
+    selector.onchange = () => { f.CHOICE = selector.value; SHEET.refresh(); }
+    e.appendChild(FACTORY.text("Choose skill:"));
     e.appendChild(selector);
-    e.appendChild(makeTextDiv("Specify Instrument, Tool, or Language:"));
+    e.appendChild(FACTORY.text("Specify Instrument, Tool, or Language:"));
     var input = document.createElement('input');
     input.width = '100%';
     input.value = f.SPECIFICATION;
-    input.onchange = () => { f.SPECIFICATION = input.value; refresh(); }
+    input.onchange = () => { f.SPECIFICATION = input.value; SHEET.refresh(); }
     e.appendChild(input);
   }
 }
