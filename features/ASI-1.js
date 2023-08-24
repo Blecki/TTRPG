@@ -1,4 +1,4 @@
-return { 
+{ 
   NAME: "ASI (1)", 
   DESCRIPTION: "Increase two stats by 1 or one stat by 2.",
   SEQUENCE: 0,
