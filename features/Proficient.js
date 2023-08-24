@@ -6,7 +6,7 @@
   AVAILABLE: (f, c) => true,
   APPLY_STATS: (f, c) => {},
   APPLY_FEATURE: (f, c) => { 
-    var prof = findProf(c, f.CHOICE); 
+    var prof = c.findProficiency(f.CHOICE); 
     if (prof) {
       prof.MULTIPLIER += 1;
       prof.SPECIFICATION = f.SPECIFICATION;
