@@ -40,12 +40,12 @@ var CHARACTER_BASE = {
     setLevel: function(level) {
       this.LEVEL = level;
       this.FEATURES_AVAILABLE = 5 + (this.LEVEL * 2);
-      SHEET.reset();
+      SHEET.refresh();
     },
   
     setStat: function(stat, value) {
       this.BASE_STATS[stat] = value;
-      SHEET.reset();
+      SHEET.refresh();
     },
   
     purgeFeatures: function() {
