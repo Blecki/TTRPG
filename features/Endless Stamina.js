@@ -1,5 +1,5 @@
 { 
-  NAME: "ENDLESS STANIMA", 
+  NAME: "ENDLESS STAMINA", 
   DESCRIPTION: "When you roll initiative, regain one feature point, unless you are already at your maximum.",
   SEQUENCE: 2,
   REQUIREMENTS: "LEVEL 15",
