@@ -142,7 +142,7 @@ var SHEET = {
           tile.onclick = (function(feature) { return () => {
             console.log("Clicked on feature:");
             console.log(feature);
-            CHARACTER_BASE.addFeature(this.cloneFeature(feature));
+            CHARACTER_BASE.addFeature(SHEET.cloneFeature(feature));
           }; })(feature);
           output.appendChild(tile);
         }
