@@ -20,6 +20,7 @@
         padding: 5px;
     }
   </style>
+  <script src="factory.js"></script>
 </head>
 
 <body>
@@ -136,39 +137,40 @@
     FEATURE_POINTS: 2,
     ARMOR_CLASS: 10,
     PROFICIENCIES: makeBaseProficiencies(),
-    ADDITIONAL_FEATURES: []
+    ADDITIONAL_FEATURES: [],
+
+    findProficiency: function(name) {
+      for (var prof of this.PROFICIENCIES)
+        if (prof.NAME == name)
+          return prof;
+      return undefined;
+    },
+
+    reset: function() {
+      this.STATS = { 
+        STR: this.BASE_STATS.STR,
+        DEX: this.BASE_STATS.DEX, 
+        CON: this.BASE_STATS.CON, 
+        INT: this.BASE_STATS.INT, 
+        WIS: this.BASE_STATS.WIS, 
+        CHA: this.BASE_STATS.CHA 
+      };
+      this.HIT_POINTS = (10 + this.MODIFIERS.CON) * this.LEVEL;
+      this.ARMOR_CLASS = 10 + this.MODIFIERS.DEX;
+      this.PROFICIENCY_BONUS = 2;
+      this.FEATURE_POINTS = 2;
+      this.PROFICIENCIES = makeBaseProficiencies();
+      this.ADDITIONAL_FEATURES = [];
+    }
   };
-
-  function findProf(c, name) {
-    for (var prof of c.PROFICIENCIES)
-      if (prof.NAME == name)
-        return prof;
-    return undefined;
-  }
-
-  function resetCharacterStats() {
-    CHARACTER_BASE.STATS = { STR: CHARACTER_BASE.BASE_STATS.STR,
-                             DEX: CHARACTER_BASE.BASE_STATS.DEX, 
-                             CON: CHARACTER_BASE.BASE_STATS.CON, 
-                             INT: CHARACTER_BASE.BASE_STATS.INT, 
-                             WIS: CHARACTER_BASE.BASE_STATS.WIS, 
-                             CHA: CHARACTER_BASE.BASE_STATS.CHA };
-    CHARACTER_BASE.HIT_POINTS = (10 + CHARACTER_BASE.MODIFIERS.CON) * CHARACTER_BASE.LEVEL;
-    CHARACTER_BASE.ARMOR_CLASS = 10 + CHARACTER_BASE.MODIFIERS.DEX;
-    CHARACTER_BASE.PROFICIENCY_BONUS = 2;
-    CHARACTER_BASE.FEATURE_POINTS = 2;
-    CHARACTER_BASE.PROFICIENCIES = makeBaseProficiencies();
-    CHARACTER_BASE.ADDITIONAL_FEATURES = [];
-  }
 
   function purgeFeatures() {
     while (true) {
       applyFeatures();
-      var pre_size = CHARACTER_BASE.CHOSEN_FEATURES.length;
-      CHARACTER_BASE.CHOSEN_FEATURES = CHARACTER_BASE.CHOSEN_FEATURES.filter(a => isFeatureAvailable(a));
-      var post_size = CHARACTER_BASE.CHOSEN_FEATURES.length;
-      if (pre_size == post_size)
+      valid_features = CHARACTER_BASE.CHOSEN_FEATURES.filter(a => isFeatureAvailable(a));
+      if (CHARACTER_BASE.CHOSEN_FEATURES.length == valid_features.length)
         break;
+      CHARACTER_BASE.CHOSEN_FEATURES = valid_features;
     }
   }
 
@@ -201,14 +203,9 @@
   }
 
   function applyFeatures() {
-    resetCharacterStats();
-    sortCharacterFeatures();
-
-    CHARACTER_BASE.PROFICIENCY_BONUS = 2;
-    CHARACTER_BASE.FEATURE_POINTS = 2;    
-    CHARACTER_BASE.PROFICIENCIES = makeBaseProficiencies();
-    CHARACTER_BASE.ADDITIONAL_FEATURES = [];
-
+    CHARACTER_BASE.reset();
+    CHARACTER_BASE.CHOSEN_FEATURES.sort((a,b) => a.SEQUENCE - b.SEQUENCE);
+    
     for (var feature of CHARACTER_BASE.CHOSEN_FEATURES)
       if (feature.APPLY_STATS)
         feature.APPLY_STATS(feature, CHARACTER_BASE);
@@ -224,9 +221,11 @@
 
     CHARACTER_BASE.HIT_POINTS = (10 + CHARACTER_BASE.MODIFIERS.CON) * CHARACTER_BASE.LEVEL;
     CHARACTER_BASE.ARMOR_CLASS = 10 + CHARACTER_BASE.MODIFIERS.DEX;
+
     for (var feature of CHARACTER_BASE.CHOSEN_FEATURES)
       if (feature.APPLY_FEATURE)
         feature.APPLY_FEATURE(feature, CHARACTER_BASE);
+
     for (var prof of CHARACTER_BASE.PROFICIENCIES) {
       if (prof.STAT != "") {
         prof.BONUS = CHARACTER_BASE.MODIFIERS[prof.STAT];
@@ -246,35 +245,30 @@
   }
 
   function loadFeatures() {
-    fetch ( "https://api.github.com/repos/Blecki/TTRPG/contents/proficiencies.json", {
+    fetch ( "https://raw.githubusercontent.com/Blecki/TTRPG/main/proficiencies.json", {
       method: 'GET'
     })
     .then (response => {
-      response.json().then(data => {
-        PROFICIENCIES = JSON.parse(atob(data.content));
+      response.text().then(data => {
+        PROFICIENCIES = JSON.parse(data);
         
         fetch ( "https://api.github.com/repos/Blecki/TTRPG/contents/features", {
-          method: 'GET',
-          body: null,
-          headers: { },
+          method: 'GET'
         })
         .then(response => {
-          if (response.status !== 200) {
-            return;
-          }
-          
+                    
           response.json().then(function(data) {
             var count = 0;
             var expected = data.length;
             for (var feature of data) {
-              fetch ("https://api.github.com/repos/Blecki/TTRPG/contents/features" + "/" + feature.name, { 
+              fetch ("https://raw.githubusercontent.com/Blecki/TTRPG/main/features/" + feature.name, { 
                 method: 'GET'
               })
               .then(response => {
-                response.json().then(function(data) {
-                  var content = atob(data.content);
+                response.text().then(function(data) {
+                  //var content = atob(data.content);
 
-                  var funcCode = "return " + content;
+                  var funcCode = "return " + data;
                   var result = new Function(funcCode)();
                   console.log(result);
                   FEATURES.push(result);
@@ -282,6 +276,20 @@
                   count += 1;
                   if (count == expected) {
                     console.log("Loaded Features");
+                    
+                    var TAGS = [];
+                    for (var feature of FEATURES) {
+                      for (var tag of feature.TAGS)
+                        TAGS.push(tag);
+                    }
+
+                    var UNIQUE_TAGS = TAGS.filter((value, index, array) => array.indexOf(value) === index);
+                    UNIQUE_TAGS.sort();
+
+                    for (var tag of UNIQUE_TAGS) {
+                      document.getElementById("FILTER_TAG").innerHTML += `<option value="${tag}">${tag}</option>`;
+                    }
+                    
                     refresh();
                   }
                 })
@@ -294,37 +302,9 @@
     });
   }
 
-  function makeTextDiv(text) {
-    var r = document.createElement("div");
-    r.innerText = text;
-    return r;
-  }
-
-  function makeSelector(options) {
-    var r = document.createElement("select");
-    for (var option of options) {
-      e = document.createElement("option");
-      e.value = option;
-      e.innerText = option;
-      r.appendChild(e);
-    }
-    return r;
-  }
-
   function cloneFeature(feature) {
-    return {
-      NAME: feature.NAME,
-      DESCRIPTION: feature.DESCRIPTION,
-      SEQUENCE: feature.SEQUENCE,
-      REQUIREMENTS: feature.REQUIREMENTS,
-      AVAILABLE: feature.AVAILABLE,
-      APPLY_STATS: feature.APPLY_STATS,
-      APPLY_FEATURE: feature.APPLY_FEATURE,
-      CUSTOM_TILE: feature.CUSTOM_TILE
-    };
+    return Object.assign({}, feature);
   }
-
-  var CHOSEN_FEATURES = [];
 
   function clearElement(element) {
     element.innerHTML = "";
@@ -348,10 +328,6 @@
   function removeFeature(feature) {
     CHARACTER_BASE.CHOSEN_FEATURES = CHARACTER_BASE.CHOSEN_FEATURES.filter(a => a !== feature);
     refresh();
-  }
-
-  function sortCharacterFeatures() {
-    CHARACTER_BASE.CHOSEN_FEATURES.sort((a,b) => a.SEQUENCE - b.SEQUENCE);
   }
 
   function hasFeature(featureName) {
@@ -477,40 +453,24 @@
       }
   }
 
-  function makeOption(value) {
-    var r = document.createElement('option');
-    r.value = value;
-    r.innerText = value;
-    return r;
-  }
 
-  var TAGS = [];
-  for (var feature of FEATURES) {
-    for (var tag of feature.TAGS)
-      TAGS.push(tag);
-  }
-
-  var UNIQUE_TAGS = TAGS.filter((value, index, array) => array.indexOf(value) === index);
-  UNIQUE_TAGS.sort();
-
-  for (var tag of UNIQUE_TAGS) {
-    document.getElementById("FILTER_TAG").innerHTML += `<option value="${tag}">${tag}</option>`;
-  }
-
-  function makeStatSelector(stat) {
+  function statSelector(stat) {
     var select = document.getElementById(stat + "_SELECT");
     for (var x = 1; x <= 20; ++x)
-      select.appendChild(makeOption(x));
+      select.appendChild(FACTORY.option(x));
     select.value = 10;
   }
 
-
-  makeStatSelector('STR');
-  makeStatSelector('DEX');
-  makeStatSelector('CON');
-  makeStatSelector('INT');
-  makeStatSelector('WIS');
-  makeStatSelector('CHA');
+  statSelector('STR');
+  statSelector('DEX');
+  statSelector('CON');
+  statSelector('INT');
+  statSelector('WIS');  
+  statSelector('CHA');
   loadFeatures();
+
+  var SHEET = {
+    refresh: function() { refresh(); }
+  };
 
 </script>
