@@ -4,7 +4,7 @@
   SEQUENCE: 0,
   REQUIREMENTS: "LEVEL 8",
   AVAILABLE: (f, c) => c.LEVEL >= 8,
-  APPLY_STATS: (f, c) => { console.log("APPLY ASI"); c.STATS[f.FIRST_CHOICE] += 1; c.STATS[f.SECOND_CHOICE] += 1; },
+  APPLY_STATS: (f, c) => { c.STATS[f.FIRST_CHOICE] += 1; c.STATS[f.SECOND_CHOICE] += 1; },
   APPLY_FEATURE: (f, c) => {},
   TAGS: [ "COMMON", "ASI" ],
   FIRST_CHOICE: "STR",
