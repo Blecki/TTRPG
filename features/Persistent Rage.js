@@ -3,7 +3,7 @@
   DESCRIPTION: "",
   SEQUENCE: 2,
   REQUIREMENTS: "LEVEL 15, RELENTLESS RAGE",
-  AVAILABLE: (f, c) => c.LEVEL >= 15 && hasFeature("RELENTLESS RAGE"),
+  AVAILABLE: (f, c) => c.LEVEL >= 15 && c.hasFeature("RELENTLESS RAGE"),
   APPLY_STATS: (f, c) => {},
   APPLY_FEATURE: (f, c) => { c.ADDITIONAL_FEATURES.push(f); },
   TAGS: [ "BARBARIAN" ]
