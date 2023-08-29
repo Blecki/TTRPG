@@ -20,9 +20,409 @@
         padding: 5px;
     }
   </style>
-  <script src="factory.js?v=2"></script>
-  <script src="character.js?v=3"></script>
-  <script src="sheet.js?v=2"></script>
+  <script>
+var FACTORY = {
+    option: function(value) {
+      var r = document.createElement('option');
+      r.value = value;
+      r.innerText = value;
+      return r;
+    },
+  
+    text: function(text) {
+      var r = document.createElement("div");
+      r.innerText = text;
+      return r;
+    },
+  
+    select: function(options) {
+      var r = document.createElement("select");
+      for (var option of options)
+        r.appendChild(FACTORY.option(option));
+      return r;
+    }
+  };
+
+
+  </script>
+
+  <script>
+var CHARACTER_BASE = {
+    LEVEL: 1,
+    FEATURES_AVAILABLE: 5,
+    CHOSEN_FEATURES: [],
+    BASE_STATS: { STR: 10, DEX: 10, CON: 10, INT: 10, WIS: 10, CHA: 10 },
+    STATS: { STR: 10, DEX: 10, CON: 10, INT: 10, WIS: 10, CHA: 10 },
+    MODIFIERS: { STR: 0, DEX: 0, CON: 0, INT: 0, WIS: 0, CHA: 0 },
+    HIT_POINTS: 10,
+    PROFICIENCY_BONUS: 2,
+    FEATURE_POINTS: 2,
+    ARMOR_CLASS: 10,
+    PROFICIENCIES: [],
+    ADDITIONAL_FEATURES: [],
+    STAGE: "CREATION",
+  
+    findProficiency: function(name) {
+      for (var prof of this.PROFICIENCIES)
+        if (prof.NAME == name)
+          return prof;
+      return undefined;
+    },
+  
+    reset: function() {
+      this.STATS = { 
+        STR: this.BASE_STATS.STR,
+        DEX: this.BASE_STATS.DEX, 
+        CON: this.BASE_STATS.CON, 
+        INT: this.BASE_STATS.INT, 
+        WIS: this.BASE_STATS.WIS, 
+        CHA: this.BASE_STATS.CHA 
+      };
+      this.HIT_POINTS = (10 + this.MODIFIERS.CON) * this.LEVEL;
+      this.ARMOR_CLASS = 10 + this.MODIFIERS.DEX;
+      this.PROFICIENCY_BONUS = 2;
+      this.FEATURE_POINTS = 2;
+      this.PROFICIENCIES = makeBaseProficiencies();
+      this.ADDITIONAL_FEATURES = [];
+      this.FEATURES_AVAILABLE = 5 + (this.LEVEL * 2);
+    },
+  
+    setLevel: function(level) {
+      this.LEVEL = level;
+      this.FEATURES_AVAILABLE = 5 + (this.LEVEL * 2);
+      SHEET.refresh();
+    },
+  
+    setStat: function(stat, value) {
+      this.BASE_STATS[stat] = value;
+      SHEET.refresh();
+    },
+  
+    purgeFeatures: function() {
+      while (true) {
+        this.applyFeatures();
+        valid_features = this.CHOSEN_FEATURES.filter(a => this.meetsFeatureRequirements(a));
+        if (this.CHOSEN_FEATURES.length == valid_features.length)
+          break;
+        this.CHOSEN_FEATURES = valid_features;
+      }
+    },
+  
+    build: function() {
+      // Get rid of any features that are not allowed.
+      this.purgeFeatures();
+      if (this.CHOSEN_FEATURES.length > this.FEATURES_AVAILABLE)
+        this.CHOSEN_FEATURES.length = this.FEATURES_AVAILABLE;
+      this.purgeFeatures();
+    },    
+    
+    meetsFeatureRequirements: function(feature) {
+      return this.checkPredicate(this, feature, feature.AVAILABLE);
+    },
+  
+    
+    checkPredicate: function(character, feature, predicate) {
+      if (predicate instanceof Function) return predicate(feature, character);
+      return predicate;
+    },
+  
+    addFeature: function(feature) {
+      this.CHOSEN_FEATURES.push(feature);
+      SHEET.refresh();
+    },
+  
+    removeFeature: function(feature) {
+      this.CHOSEN_FEATURES = this.CHOSEN_FEATURES.filter(a => a !== feature);
+      SHEET.refresh();
+    },
+  
+    hasFeature: function(featureName) {
+      for (var feature of this.CHOSEN_FEATURES)
+        if (feature.NAME == featureName)
+          return true;
+      return false;
+    },
+
+    hasTaggedFeature: function(tag) {
+      for (var feature of this.CHOSEN_FEATURES)
+        for (var _tag of feature.TAGS)
+          if (_tag == tag) return true;
+      return false;
+    },
+  
+    calculateModifier: function(stat) {
+      if (stat >= 0 && stat < 2) return -5;
+      if (stat >= 2 && stat < 4) return -4;
+      if (stat >= 4 && stat < 6) return -3;
+      if (stat >= 6 && stat < 8) return -2;
+      if (stat >= 8 && stat < 10) return -1;
+      if (stat >= 10 && stat < 12) return 0;
+      if (stat >= 12 && stat < 14) return 1;
+      if (stat >= 14 && stat < 16) return 2;
+      if (stat >= 16 && stat < 18) return 3;
+      if (stat >= 18 && stat < 20) return 4;
+      if (stat >= 20 && stat < 22) return 5;
+      if (stat >= 22 && stat < 24) return 6;
+      if (stat >= 24 && stat < 26) return 7;
+      if (stat >= 26 && stat < 28) return 8;
+      if (stat >= 28 && stat < 30) return 9;
+      if (stat >= 30 && stat < 32) return 10;
+      if (stat >= 32 && stat < 34) return 11;
+    },
+  
+    applyFeatures: function() {
+      this.reset();
+      this.CHOSEN_FEATURES.sort((a,b) => a.SEQUENCE - b.SEQUENCE);
+      
+      for (var feature of this.CHOSEN_FEATURES)
+        if (feature.APPLY_STATS)
+          feature.APPLY_STATS(feature, this);
+  
+      this.MODIFIERS = {
+        STR: this.calculateModifier(this.STATS.STR),
+        DEX: this.calculateModifier(this.STATS.DEX),
+        CON: this.calculateModifier(this.STATS.CON),
+        INT: this.calculateModifier(this.STATS.INT),
+        WIS: this.calculateModifier(this.STATS.WIS),
+        CHA: this.calculateModifier(this.STATS.CHA)      
+      };
+  
+      this.HIT_POINTS = (10 + this.MODIFIERS.CON) * this.LEVEL;
+      this.ARMOR_CLASS = 10 + this.MODIFIERS.DEX;
+  
+      for (var feature of this.CHOSEN_FEATURES)
+        if (feature.APPLY_FEATURE)
+          feature.APPLY_FEATURE(feature, this);
+  
+      for (var prof of this.PROFICIENCIES) {
+        if (prof.STAT != "") {
+          prof.BONUS = this.MODIFIERS[prof.STAT];
+          prof.BONUS += (this.PROFICIENCY_BONUS * prof.MULTIPLIER);
+        }
+        else
+          prof.BONUS = prof.MULTIPLIER;
+      }
+    }
+  };
+  
+
+  </script>
+  <script>
+var SHEET = {     
+    loadFeatures: function() {
+      fetch ( "https://raw.githubusercontent.com/Blecki/TTRPG/main/proficiencies.json", {
+        method: 'GET'
+      })
+      .then (response => {
+        response.text().then(data => {
+          PROFICIENCIES = JSON.parse(data);
+          
+          fetch ( "https://api.github.com/repos/Blecki/TTRPG/contents/features", {
+            method: 'GET'
+          })
+          .then(response => {
+                      
+            response.json().then(function(data) {
+              var count = 0;
+              var expected = data.length;
+              for (var feature of data) {
+                fetch ("https://raw.githubusercontent.com/Blecki/TTRPG/main/features/" + feature.name, { 
+                  method: 'GET'
+                })
+                .then(response => {
+                  response.text().then(function(data) {
+                    //var content = atob(data.content);
+  
+                    var funcCode = "return " + data;
+                    var result = new Function(funcCode)();
+                    console.log(result);
+                    FEATURES.push(result);
+  
+                    count += 1;
+                    if (count == expected) {
+                      console.log("Loaded Features");
+
+                      for (var feature of FEATURES) {
+                        this.setFeatureDefaults(feature);
+                      }
+                      
+                      var TAGS = [];
+                      for (var feature of FEATURES) {
+                        for (var tag of feature.TAGS)
+                          TAGS.push(tag);
+                      }
+  
+                      var UNIQUE_TAGS = TAGS.filter((value, index, array) => array.indexOf(value) === index);
+                      UNIQUE_TAGS.sort();
+  
+                      for (var tag of UNIQUE_TAGS) {
+                        document.getElementById("FILTER_TAG").innerHTML += `<option value="${tag}">${tag}</option>`;
+                      }
+                      
+                      SHEET.refresh();
+                    }
+                  })
+                });
+              }
+            });
+          });
+          
+        });
+      });
+    },
+  
+  
+    refresh: function() {
+      console.log(CHARACTER_BASE);
+      CHARACTER_BASE.build();
+  
+      document.getElementById("COUNT_AVAILABLE_FEATURES").innerText = CHARACTER_BASE.FEATURES_AVAILABLE;
+      document.getElementById("FINAL_ARMOR_CLASS").innerText = CHARACTER_BASE.ARMOR_CLASS;
+      document.getElementById("FINAL_HIT_POINTS").innerText = CHARACTER_BASE.HIT_POINTS;
+      document.getElementById("FINAL_PROFICIENCY_BONUS").innerText = CHARACTER_BASE.PROFICIENCY_BONUS;
+      document.getElementById("FINAL_FEATURE_POINTS").innerText = CHARACTER_BASE.FEATURE_POINTS;
+      document.getElementById("FINAL_STR").innerText = CHARACTER_BASE.STATS.STR;
+      document.getElementById("FINAL_DEX").innerText = CHARACTER_BASE.STATS.DEX;
+      document.getElementById("FINAL_CON").innerText = CHARACTER_BASE.STATS.CON;
+      document.getElementById("FINAL_INT").innerText = CHARACTER_BASE.STATS.INT;
+      document.getElementById("FINAL_WIS").innerText = CHARACTER_BASE.STATS.WIS;
+      document.getElementById("FINAL_CHA").innerText = CHARACTER_BASE.STATS.CHA;
+  
+      document.getElementById("MOD_STR").innerText = CHARACTER_BASE.MODIFIERS.STR;
+      document.getElementById("MOD_DEX").innerText = CHARACTER_BASE.MODIFIERS.DEX;
+      document.getElementById("MOD_CON").innerText = CHARACTER_BASE.MODIFIERS.CON;
+      document.getElementById("MOD_INT").innerText = CHARACTER_BASE.MODIFIERS.INT;
+      document.getElementById("MOD_WIS").innerText = CHARACTER_BASE.MODIFIERS.WIS;
+      document.getElementById("MOD_CHA").innerText = CHARACTER_BASE.MODIFIERS.CHA;
+      
+      this.buildAvailableFeatureList(document.getElementById("FILTER_TAG").value, document.getElementById("SEARCH_FEATURE").value, CHARACTER_BASE.STAGE);
+      this.buildSelectedFeatureList();
+      this.buildAdditionalFeatureList();
+  
+      var prof_list = document.getElementById("PROFICIENCIES");
+      prof_list.innerHTML = "";
+      for (var prof of CHARACTER_BASE.PROFICIENCIES)
+        if (prof.STAT != "")
+          prof_list.innerHTML += `<div>${prof.NAME} (${prof.STAT}) - ${prof.BONUS}</div>`; 
+  
+      var other_prof_list = document.getElementById("OTHER_PROFICIENCIES");
+      other_prof_list.innerHTML = "";
+      for (var prof of CHARACTER_BASE.PROFICIENCIES)
+        if (prof.STAT == "" && prof.MULTIPLIER > 0) {
+          console.log(prof);
+          var html = `<div>${prof.NAME}`;
+          if (prof.hasOwnProperty('SPECIFICATION') && prof.SPECIFICATION != "")
+            html += ` - ${prof.SPECIFICATION}`;
+          html += `</div>`;        
+          other_prof_list.innerHTML += html;
+        }
+    },
+  
+    buildFeatureTile: function(feature, removeButton, removeCallback) {
+      var result = document.createElement('div');
+      result.style.border = '3px solid green';
+      result.style.borderRadius = '5px';
+      result.style.margin = '5px';
+  
+      var table = document.createElement('div');
+      table.innerHTML = `<table><tr><td>${feature.NAME}</td><td>${feature.REQUIREMENTS}</td></tr><tr><td colspan=2>${feature.DESCRIPTION}</td></tr></table>`;
+  
+      if (removeButton) {
+        var r = document.createElement('button');
+        r.innerText = "X";
+        r.style.cssFloat = "right";
+        r.onclick = () => removeCallback(feature);
+        result.appendChild(r);
+      }
+  
+      result.appendChild(table);
+  
+      return result;
+    },
+    
+    buildAvailableFeatureList: function(filterTag, search, stage) {
+      var output = document.getElementById("AVAILABLE_FEATURES");
+      this.clearElement(output);
+      for (var feature of FEATURES) {
+        if (feature.STAGE != stage) continue;
+        if (search != "" && !feature.NAME.toUpperCase().includes(search.toUpperCase())) continue;
+        if (filterTag != "" && !feature.TAGS.includes(filterTag)) continue;
+        var tile = this.buildFeatureTile(feature, false);
+        var available = true;
+        if (available) available &= CHARACTER_BASE.CHOSEN_FEATURES.length < CHARACTER_BASE.FEATURES_AVAILABLE;
+        if (available) available &= CHARACTER_BASE.meetsFeatureRequirements(feature);
+        if (available && !feature.TAGS.includes("STACKABLE")) available &= !CHARACTER_BASE.hasFeature(feature.NAME);
+        if (document.getElementById("FILTER_AVAILABLE").checked && !available) continue;
+        if (available) {
+          tile.onclick = (function(feature) { return () => {
+            console.log("Clicked on feature:");
+            console.log(feature);
+            CHARACTER_BASE.addFeature(SHEET.cloneFeature(feature));
+          }; })(feature);
+          output.appendChild(tile);
+        }
+        else {
+          tile.disabled = true;
+          tile.style.border = "1px solid gray";
+          output.appendChild(tile);
+        }
+      }
+    },
+  
+    buildSelectedFeatureList: function() {
+      var output = document.getElementById("SELECTED_FEATURES");
+      this.clearElement(output);
+      for (var feature of CHARACTER_BASE.CHOSEN_FEATURES) {
+        var tile = this.buildFeatureTile(feature, true, (feature) => {
+          CHARACTER_BASE.removeFeature(feature);
+        });
+        if (feature.hasOwnProperty("CUSTOM_TILE") && feature.CUSTOM_TILE instanceof Function)
+          feature.CUSTOM_TILE(feature, CHARACTER_BASE, tile);
+        output.appendChild(tile);
+      }
+    },
+  
+    buildAdditionalFeatureList: function() {
+      var output = document.getElementById("ADDITIONAL_FEATURES");
+      this.clearElement(output);
+      for (var feature of CHARACTER_BASE.ADDITIONAL_FEATURES) {
+        output.appendChild(this.buildFeatureTile(feature, false));
+      }
+    },
+
+    setFeatureDefaults: function(feature) {
+      if (!feature.hasOwnProperty('STAGE'))
+        feature.STAGE = "LEVELUP";
+    },
+      
+    cloneFeature: function(feature) {
+      return Object.assign({}, feature);
+    },
+  
+    clearElement: function(element) {
+      element.innerHTML = "";
+    },
+  
+      
+    statSelector: function(stat) {
+      var select = document.getElementById(stat + "_SELECT");
+      for (var x = 1; x <= 20; ++x)
+        select.appendChild(FACTORY.option(x));
+      select.value = 10;
+    },
+    
+    load: function() {
+      this.statSelector('STR');
+      this.statSelector('DEX');
+      this.statSelector('CON');
+      this.statSelector('INT');
+      this.statSelector('WIS');  
+      this.statSelector('CHA');
+      this.loadFeatures();
+    }
+  };
+
+  </script>
 </head>
 
 <body>
