@@ -11,6 +11,7 @@ var CHARACTER_BASE = {
     ARMOR_CLASS: 10,
     PROFICIENCIES: [],
     ADDITIONAL_FEATURES: [],
+    STAGE: "CREATION",
   
     findProficiency: function(name) {
       for (var prof of this.PROFICIENCIES)
@@ -90,6 +91,13 @@ var CHARACTER_BASE = {
       for (var feature of this.CHOSEN_FEATURES)
         if (feature.NAME == featureName)
           return true;
+      return false;
+    },
+
+    hasTaggedFeature: function(tag) {
+      for (var feature of this.CHOSEN_FEATURES)
+        for (var _tag of feature.TAGS)
+          if (_tag == tag) return true;
       return false;
     },
   

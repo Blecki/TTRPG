@@ -31,6 +31,10 @@ var SHEET = {
                     count += 1;
                     if (count == expected) {
                       console.log("Loaded Features");
+
+                      for (var feature of FEATURES) {
+                        this.setFeatureDefaults(feature);
+                      }
                       
                       var TAGS = [];
                       for (var feature of FEATURES) {
@@ -81,7 +85,7 @@ var SHEET = {
       document.getElementById("MOD_WIS").innerText = CHARACTER_BASE.MODIFIERS.WIS;
       document.getElementById("MOD_CHA").innerText = CHARACTER_BASE.MODIFIERS.CHA;
       
-      this.buildAvailableFeatureList(document.getElementById("FILTER_TAG").value, document.getElementById("SEARCH_FEATURE").value);
+      this.buildAvailableFeatureList(document.getElementById("FILTER_TAG").value, document.getElementById("SEARCH_FEATURE").value, CHARACTER_BASE.STAGE);
       this.buildSelectedFeatureList();
       this.buildAdditionalFeatureList();
   
@@ -126,10 +130,11 @@ var SHEET = {
       return result;
     },
     
-    buildAvailableFeatureList: function(filterTag, search) {
+    buildAvailableFeatureList: function(filterTag, search, stage) {
       var output = document.getElementById("AVAILABLE_FEATURES");
       this.clearElement(output);
       for (var feature of FEATURES) {
+        if (feature.STAGE != stage) continue;
         if (search != "" && !feature.NAME.toUpperCase().includes(search.toUpperCase())) continue;
         if (filterTag != "" && !feature.TAGS.includes(filterTag)) continue;
         var tile = this.buildFeatureTile(feature, false);
@@ -173,6 +178,11 @@ var SHEET = {
       for (var feature of CHARACTER_BASE.ADDITIONAL_FEATURES) {
         output.appendChild(this.buildFeatureTile(feature, false));
       }
+    },
+
+    setFeatureDefaults: function(feature) {
+      if (!feature.hasOwnProperty('STAGE'))
+        feature.STAGE = "LEVELUP";
     },
       
     cloneFeature: function(feature) {
